@@ -80,10 +80,12 @@ void ABlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//客户端或者本地，则执行完整AimOffset
 	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
 	{
 		AimOffset(DeltaTime);
 	}
+	//非“客户端或者本地”，则在OnRep_ReplicatedMovement里执行这些
 	else
 	{
 		TimeSinceLastMovementReplication += DeltaTime;
@@ -264,7 +266,9 @@ void ABlasterCharacter::AimOffset(float DeltaTime)
 
 	if (Speed == 0.f && !bIsInAir) // 角色不动、且不在空中(的时候才会有AO)
 	{
+		//本地且不动可以执行RotateRootBone
 		bRotateRootBone = true;
+
 		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);//当前瞄准方向
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);//计算视角偏移
 		AO_Yaw = DeltaAimRotation.Yaw;//赋值
@@ -285,6 +289,7 @@ void ABlasterCharacter::AimOffset(float DeltaTime)
 	}
 	if (Speed > 0.f || bIsInAir) // 奔跑或跳跃
 	{
+		//本地但在移动，则不可以执行RotateRootBone
 		bRotateRootBone = false;
 		
 		//当角色在奔跑或在空中有武器时，每一帧信息都会被储存起来。
@@ -314,7 +319,11 @@ void ABlasterCharacter::CalculateAO_Pitch()
 void ABlasterCharacter::SimProxiesTurn()
 {
 	if (Combat1 == nullptr || Combat1->EquippedWeapon == nullptr) return;
+
+	//创建变量让代理的用户不再使用RotateRootBone
 	bRotateRootBone = false;
+
+
 	float Speed = CalculateSpeed();
 	if (Speed > 0.f)
 	{
@@ -322,12 +331,16 @@ void ABlasterCharacter::SimProxiesTurn()
 		return;
 	}
 
-	ProxyRotationLastFrame = ProxyRotation;
-	ProxyRotation = GetActorRotation();
+	//计算与上一帧旋转的差值
+	ProxyRotationLastFrame = ProxyRotation;//上一帧
+	ProxyRotation = GetActorRotation();//这一帧
+
+	//两帧旋转插值并作归一化
 	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
 
 	UE_LOG(LogTemp, Warning, TEXT("ProxyYaw: %f"), ProxyYaw);
 
+	//两帧之间的转向如果比阈值大，就播放转向动画——通过设置ETurningInPlace
 	if (FMath::Abs(ProxyYaw) > TurnThreshold)
 	{
 		if (ProxyYaw > TurnThreshold)
@@ -344,6 +357,8 @@ void ABlasterCharacter::SimProxiesTurn()
 		}
 		return;
 	}
+
+	//两帧之间的转向如果比阈值大，就不播放转向动画
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 
 }

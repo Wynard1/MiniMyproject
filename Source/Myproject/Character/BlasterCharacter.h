@@ -44,6 +44,8 @@ protected:
 	void AimOffset(float DeltaTime);
 
 	void CalculateAO_Pitch();
+
+	//代理原地旋转
 	void SimProxiesTurn();
 
 	virtual void Jump() override;//重写Jump函数
@@ -103,10 +105,13 @@ private:
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f;
 
+	//动画蓝图中用来判断
 	bool bRotateRootBone;
-	float TurnThreshold = 0.5f;
-	FRotator ProxyRotationLastFrame;
-	FRotator ProxyRotation;
+
+	//原地旋转时播放动画所需的参数
+	float TurnThreshold = 0.5f;			//旋转阈值
+	FRotator ProxyRotationLastFrame;	//最后一帧旋转
+	FRotator ProxyRotation;				//当前旋转
 	float ProxyYaw;
 	float TimeSinceLastMovementReplication;
 	float CalculateSpeed();
