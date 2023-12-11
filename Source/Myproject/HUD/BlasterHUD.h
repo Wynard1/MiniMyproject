@@ -34,6 +34,18 @@ class MYPROJECT_API ABlasterHUD : public AHUD
 	GENERATED_BODY()
 public:
 	virtual void DrawHUD() override;
+
+	//蓝图里暴露的选择CharacterOverlay
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	TSubclassOf<class UUserWidget> CharacterOverlayClass;
+
+	class UCharacterOverlay* CharacterOverlay;
+
+protected:
+	virtual void BeginPlay() override;
+
+	void AddCharacterOverlay();
+
 private:
 	//在这个头文件里自定义的数据结构
 	FHUDPackage HUDPackage;
