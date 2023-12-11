@@ -37,6 +37,8 @@ protected:
 
 	void FireButtonPressed(bool bPressed);//左键开火
 
+	void Fire();
+
 	UFUNCTION(Server, Reliable)//服务器的fire
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
@@ -102,9 +104,17 @@ private:
 
 	void InterpFOV(float DeltaTime);//用于插值 
 
+	/**
+	* Automatic fire
+	*/
+
+	FTimerHandle FireTimer;
+	bool bCanFire = true;
+
+	void StartFireTimer();
+	void FireTimerFinished();
+
 public:	
-	// Called every frame
-	
 
 		
 };
