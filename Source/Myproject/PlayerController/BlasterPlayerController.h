@@ -14,4 +14,13 @@ class MYPROJECT_API ABlasterPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+public:
+	//更新生命值
+	void SetHUDHealth(float Health, float MaxHealth);
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	class ABlasterHUD* BlasterHUD;
+
 };
