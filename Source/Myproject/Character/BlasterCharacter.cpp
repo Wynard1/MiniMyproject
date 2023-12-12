@@ -14,6 +14,7 @@
 #include "BlasterAnimInstance.h"
 #include "Myproject/Myproject.h"
 #include "Myproject/PlayerController/BlasterPlayerController.h"
+#include "Myproject/GameMode/BlasterGameMode.h"
 
 ABlasterCharacter::ABlasterCharacter()//构造函数
 {
@@ -73,6 +74,11 @@ void ABlasterCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMovementReplication = 0.f;
 }
 
+void ABlasterCharacter::Elim_Implementation()
+{
+	bElimmed = true;
+	PlayElimMontage();
+}
 
 void ABlasterCharacter::BeginPlay()
 {
@@ -161,13 +167,23 @@ void ABlasterCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void ABlasterCharacter::PlayElimMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ElimMontage)
+	{
+		//根据名字播放动画段落
+		AnimInstance->Montage_Play(ElimMontage);
+	}
+}
+
 void ABlasterCharacter::PlayHitReactMontage()
 {
 	//没有武器不能播放
 	if (Combat1 == nullptr || Combat1->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && HitReactMontage)
+	if (AnimInstance && HitReactMontage && !AnimInstance->IsAnyMontagePlaying() )
 	{
 		AnimInstance->Montage_Play(HitReactMontage);
 
@@ -184,6 +200,21 @@ void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 	UpdateHUDHealth();
 	PlayHitReactMontage();
+
+	//生命值为0时，执行淘汰函数
+	if (Health == 0.f)
+	{
+		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+		if (BlasterGameMode)
+		{
+			//淘汰函数的参数准备
+			BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+			ABlasterPlayerController* AttackerController = Cast<ABlasterPlayerController>(InstigatorController);
+			
+			//淘汰
+			BlasterGameMode->PlayerEliminated(this, BlasterPlayerController, AttackerController);
+		}
+	}
 }
 
 void ABlasterCharacter::MoveForward(float Value)
@@ -476,7 +507,10 @@ void ABlasterCharacter::HideCameraIfCharacterClose()
 void ABlasterCharacter::OnRep_Health() //血量改变时
 {
 	UpdateHUDHealth();//更新血量
-	PlayHitReactMontage();//播放动画
+	if (!bElimmed)
+	{
+		PlayHitReactMontage();
+	}
 }
 
 void ABlasterCharacter::UpdateHUDHealth()//更新血量

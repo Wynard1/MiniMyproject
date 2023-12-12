@@ -21,15 +21,17 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 
-	//蒙太奇播放
+	//开火蒙太奇播放
 	void PlayFireMontage(bool bAiming);
 	
-	/*
-	//受击动画RPC
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit(); */
-
+	//播放被击杀动画
+	void PlayElimMontage();
+	
 	virtual void OnRep_ReplicatedMovement() override;
+
+	//清除玩家
+	UFUNCTION(NetMulticast, Reliable)
+	void Elim();
 
 protected:
 	virtual void BeginPlay() override;
@@ -105,6 +107,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;
 
+	//死亡动画
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ElimMontage;
+
 	//镜头太近隐藏角色的函数；TICK执行
 	void HideCameraIfCharacterClose();
 
@@ -138,6 +144,8 @@ private:
 
 	class ABlasterPlayerController* BlasterPlayerController;
 
+	bool bElimmed = false;
+
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
@@ -154,4 +162,6 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
+	
+	FORCEINLINE bool IsElimmed() const { return bElimmed; }
 };
