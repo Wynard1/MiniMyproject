@@ -78,11 +78,13 @@ void ABlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//health update
-	BlasterPlayerController = Cast<ABlasterPlayerController>(Controller);
-	if (BlasterPlayerController)
+	//血量更新
+	UpdateHUDHealth();
+
+	//绑定伤害回调函数
+	if (HasAuthority())
 	{
-		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+		OnTakeAnyDamage.AddDynamic(this, &ABlasterCharacter::ReceiveDamage);
 	}
 }
 
@@ -175,6 +177,13 @@ void ABlasterCharacter::PlayHitReactMontage()
 		//根据名字播放动画段落
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
+}
+
+void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	UpdateHUDHealth();
+	PlayHitReactMontage();
 }
 
 void ABlasterCharacter::MoveForward(float Value)
@@ -431,10 +440,11 @@ void ABlasterCharacter::TurnInPlace(float DeltaTime)
 	}
 }
 
+/*
 void ABlasterCharacter::MulticastHit_Implementation()
 {
 	PlayHitReactMontage();
-}
+}*/
 
 void ABlasterCharacter::HideCameraIfCharacterClose()
 {
@@ -463,9 +473,19 @@ void ABlasterCharacter::HideCameraIfCharacterClose()
 	}
 }
 
-void ABlasterCharacter::OnRep_Health()
+void ABlasterCharacter::OnRep_Health() //血量改变时
 {
+	UpdateHUDHealth();//更新血量
+	PlayHitReactMontage();//播放动画
+}
 
+void ABlasterCharacter::UpdateHUDHealth()//更新血量
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
 }
 
 void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)

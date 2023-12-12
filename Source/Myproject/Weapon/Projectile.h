@@ -27,6 +27,10 @@ protected:
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	//伤害
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f;
+
 private:
 	//在找到合适的理由之前不暴露到蓝图 
 	UPROPERTY(EditAnywhere)

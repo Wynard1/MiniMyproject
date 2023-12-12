@@ -24,9 +24,10 @@ public:
 	//蒙太奇播放
 	void PlayFireMontage(bool bAiming);
 	
+	/*
 	//受击动画RPC
 	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit();
+	void MulticastHit(); */
 
 	virtual void OnRep_ReplicatedMovement() override;
 
@@ -56,6 +57,12 @@ protected:
 
 	//受击动画播放
 	void PlayHitReactMontage();
+
+	//apply damage的回调函数
+	UFUNCTION()
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
+
+	void UpdateHUDHealth();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
