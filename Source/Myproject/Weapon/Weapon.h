@@ -31,11 +31,13 @@ public:
 	//void Fire();
 	virtual void Fire(const FVector& HitTarget);//重写fire函数，添加一个hit target
 
+	//死亡后武器掉落
+	void Dropped();
+
 	/**
 	* Textures for the weapon crosshairs
 	* 准心纹理
 	*/
-
 	UPROPERTY(EditAnywhere, Category = Crosshairs)
 	class UTexture2D* CrosshairsCenter;
 

@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Myproject/BlasterTypes/TurningInPlace.h"
 #include "Myproject/Interfaces/InteractWithCrosshairsInterface.h"
+#include "Components/TimelineComponent.h"
 #include "BlasterCharacter.generated.h"
 
 
@@ -157,6 +158,39 @@ private:
 	float ElimDelay = 3.f;
 
 	void ElimTimerFinished();
+
+	/**
+	* Dissolve effect
+	*/
+
+	//timeline
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* DissolveTimeline;
+	
+	//Track
+	FOnTimelineFloat DissolveTrack;	
+
+	//Curve
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* DissolveCurve;
+
+	//Timeline的调用和回调
+	//调用
+	void StartDissolve();
+
+	//现在，每当我们添加这样的时间轴组件时，我们需要一个每帧被调用的回调函数。当我们更新时间轴时，这将是接收相应浮点值的函数到曲线上的位置。
+	//回调
+	UFUNCTION()
+	void UpdateDissolveMaterial(float DissolveValue);
+	
+
+	// Dynamic instance that we can change at runtime
+	UPROPERTY(VisibleAnywhere, Category = Elim)
+	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
+
+	// Material instance set on the Blueprint, used with the dynamic material instance
+	UPROPERTY(EditAnywhere, Category = Elim)
+	UMaterialInstance* DissolveMaterialInstance;
 
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);

@@ -57,6 +57,9 @@ ABlasterCharacter::ABlasterCharacter()//构造函数
 	//net update frequency
 	NetUpdateFrequency = 66.f;
 	MinNetUpdateFrequency = 33.f;
+
+	//TimelineComponent
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
 }
 
 void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -77,6 +80,12 @@ void ABlasterCharacter::OnRep_ReplicatedMovement()
 
 void ABlasterCharacter::Elim()	//only on server
 {
+	//死亡时武器掉落
+	if (Combat1 && Combat1->EquippedWeapon)
+	{
+		Combat1->EquippedWeapon->Dropped();
+	}
+	
 	// call RPC
 	MulticastElim();
 	
@@ -93,6 +102,35 @@ void ABlasterCharacter::MulticastElim_Implementation()
 {
 	bElimmed = true;
 	PlayElimMontage();
+
+	//死亡时替换成溶解材质
+	if (DissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+
+		//溶解材质的初始值
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), 0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 200.f);
+	}
+
+	//播放timeline调整溶解材质的Dissolve参数
+	StartDissolve();
+
+	// Disable character movement
+	//被击杀后禁止角色WASD移动&禁止通过转视角改变角色朝向
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+
+	if (BlasterPlayerController)
+	{
+		//停止输入(开火)
+		DisableInput(BlasterPlayerController);
+	}
+	// Disable collision
+	//关闭胶囊体碰撞&关闭网格碰撞
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);	
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);				
 }
 
 void ABlasterCharacter::ElimTimerFinished() //only on server
@@ -546,6 +584,33 @@ void ABlasterCharacter::UpdateHUDHealth()//更新血量
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+
+void ABlasterCharacter::StartDissolve()
+{
+	//把回调函数绑定在Track上
+	DissolveTrack.BindDynamic(this, &ABlasterCharacter::UpdateDissolveMaterial); 
+	
+	//调用TimeLine
+	if (DissolveCurve && DissolveTimeline)
+	{
+		//为了把曲线加到时间轴上，我们要用溶解的时间轴。
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		
+		//在这之后剩下的就是开始时间轴
+		DissolveTimeline->Play();
+	}
+}
+
+//dissolve Timeline的回调函数，让Timeline和材质的Dissolve绑定
+void ABlasterCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	if (DynamicDissolveMaterialInstance)
+	{
+		//让Timeline和材质的Dissolve绑定
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
 	}
 }
 
