@@ -19,6 +19,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Myproject/PlayerState/BlasterPlayerState.h"
 
 ABlasterCharacter::ABlasterCharacter()//构造函数
 {
@@ -220,6 +221,9 @@ void ABlasterCharacter::Tick(float DeltaTime)
 	}
 
 	HideCameraIfCharacterClose();
+
+	//每帧通过+0.0同步分数
+	PollInit();
 }
 
 void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -641,6 +645,23 @@ void ABlasterCharacter::StartDissolve()
 		
 		//在这之后剩下的就是开始时间轴
 		DissolveTimeline->Play();
+	}
+}
+
+void ABlasterCharacter::PollInit()
+{
+	/*
+	check
+	*/
+	if (BlasterPlayerState == nullptr)
+	{
+		BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
+		if (BlasterPlayerState)
+		{
+			//每帧同步击杀和 死亡
+			BlasterPlayerState->AddToScore(0.f);
+			BlasterPlayerState->AddToDefeats(0);
+		}
 	}
 }
 

@@ -42,10 +42,46 @@ void ABlasterPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		const float HealthPercent = Health / MaxHealth;
 		BlasterHUD->CharacterOverlay->HealthBar->SetPercent(HealthPercent);
 
-		//血条文字打印，FMath::CeilToInt——四舍五入
+		//血条文字打印，FMath::CeilToInt——向上取整
 		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 
 		//FString HealthText和CharacterOverlay->HealthText里的UTextBlock* HealthText，都是HealthText但是含义不同。
 		BlasterHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));//SetText需要传入FText，所以要从FString转换成FText
+	}
+}
+
+void ABlasterPlayerController::SetHUDScore(float Score)
+{
+	/*
+	check
+	*/
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->ScoreAmount;
+	
+	if (bHUDValid)
+	{
+		//向下取整
+		FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score));
+		BlasterHUD->CharacterOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
+	}
+}
+
+void ABlasterPlayerController::SetHUDDefeats(int32 Defeats)
+{
+	/*
+	check
+	*/
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->DefeatsAmount;
+
+	if (bHUDValid)
+	{
+		//
+		FString DefeatsText = FString::Printf(TEXT("%d"), Defeats);
+		BlasterHUD->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
 	}
 }

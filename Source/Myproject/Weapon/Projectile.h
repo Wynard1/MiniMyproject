@@ -45,6 +45,7 @@ private:
 	class UParticleSystem* Tracer;
 
 	//粒子生成后存储
+	UPROPERTY()
 	class UParticleSystemComponent* TracerComponent;
 
 	
