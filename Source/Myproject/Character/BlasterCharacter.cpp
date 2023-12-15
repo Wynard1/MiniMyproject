@@ -16,6 +16,9 @@
 #include "Myproject/PlayerController/BlasterPlayerController.h"
 #include "Myproject/GameMode/BlasterGameMode.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
+#include "Particles/ParticleSystemComponent.h"
 
 ABlasterCharacter::ABlasterCharacter()//构造函数
 {
@@ -127,10 +130,37 @@ void ABlasterCharacter::MulticastElim_Implementation()
 		//停止输入(开火)
 		DisableInput(BlasterPlayerController);
 	}
+	
 	// Disable collision
 	//关闭胶囊体碰撞&关闭网格碰撞
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);	
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);				
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);			
+
+	// Spawn elim bot
+	//击杀后头上机器人的视效
+	if (ElimBotEffect)
+	{
+		//特效所在点——头上200单位处
+		FVector ElimBotSpawnPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.f);
+		
+		//发射特效
+		ElimBotComponent = UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			ElimBotEffect,
+			ElimBotSpawnPoint,
+			GetActorRotation()		//这样ElimBot就会像我们的角色一样旋转。
+		);
+	}
+
+	//击杀后头上机器人的音效
+	if (ElimBotSound)
+	{
+		UGameplayStatics::SpawnSoundAtLocation(
+			this,
+			ElimBotSound,
+			GetActorLocation()
+		);
+	}
 }
 
 void ABlasterCharacter::ElimTimerFinished() //only on server
@@ -142,6 +172,16 @@ void ABlasterCharacter::ElimTimerFinished() //only on server
 	if (BlasterGameMode)
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
+	}
+}
+
+void ABlasterCharacter::Destroyed()
+{
+	Super::Destroyed();
+
+	if (ElimBotComponent)
+	{
+		ElimBotComponent->DestroyComponent();
 	}
 }
 
