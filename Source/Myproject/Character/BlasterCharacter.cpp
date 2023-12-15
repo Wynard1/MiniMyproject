@@ -493,7 +493,7 @@ void ABlasterCharacter::SimProxiesTurn()
 	//两帧旋转插值并作归一化
 	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
 
-	UE_LOG(LogTemp, Warning, TEXT("ProxyYaw: %f"), ProxyYaw);
+	//UE_LOG(LogTemp, Warning, TEXT("ProxyYaw: %f"), ProxyYaw);
 
 	//两帧之间的转向如果比阈值大，就播放转向动画——通过设置ETurningInPlace
 	if (FMath::Abs(ProxyYaw) > TurnThreshold)

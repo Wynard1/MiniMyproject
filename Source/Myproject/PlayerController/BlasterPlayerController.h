@@ -17,6 +17,9 @@ class MYPROJECT_API ABlasterPlayerController : public APlayerController
 public:
 	//更新生命值
 	void SetHUDHealth(float Health, float MaxHealth);
+
+	//重生时更换Pawn会调用
+	virtual void OnPossess(APawn* InPawn) override;
 protected:
 	virtual void BeginPlay() override;
 

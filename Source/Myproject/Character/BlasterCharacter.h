@@ -225,4 +225,8 @@ public:
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	
 	FORCEINLINE bool IsElimmed() const { return bElimmed; }
+
+	//获取血量的getter
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 };
