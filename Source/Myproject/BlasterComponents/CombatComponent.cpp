@@ -152,6 +152,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 
+	//已经持有武器的话，再装备武器就会丢弃原有的武器，之后装备捡起的武器
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Dropped();
+	}
+
 	//先设置WeaponState，在函数里取消模拟物理
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
@@ -163,6 +169,10 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 		HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());
 	}
 	EquippedWeapon->SetOwner(Character);
+
+	//设置owner后给装备的武器初始化弹药
+	EquippedWeapon->SetHUDAmmo();
+
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
 }

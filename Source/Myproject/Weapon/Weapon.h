@@ -25,6 +25,13 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	//客户端Owner更新的时候调用
+	virtual void OnRep_Owner() override;
+
+	//更新弹药的函数
+	void SetHUDAmmo();
+
 	void ShowPickupWidget(bool bShowWidget);
 
 	//开火
@@ -118,6 +125,23 @@ private:
 	//Fire时弹出的弹壳类型
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACasing> CasingClass;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	int32 Ammo;
+
+	UFUNCTION()
+	void OnRep_Ammo();
+
+	void SpendRound();
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;
+
+	UPROPERTY()
+	class ABlasterCharacter* BlasterOwnerCharacter;
+	UPROPERTY()
+	class ABlasterPlayerController* BlasterOwnerController;
+
 public:
 	void SetWeaponState(EWeaponState State);
 

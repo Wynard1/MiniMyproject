@@ -20,7 +20,7 @@ void ABlasterPlayerState::AddToScore(float ScoreAmount)
 	//能够在服务器上执行，更新分数
 	//会多次调用，使用三元可以减少Cast次数
 	Character = Character == nullptr ? Cast<ABlasterCharacter>(GetPawn()) : Character;
-	if (Character && Character->Controller)
+	if (Character)
 	{
 		Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
 		if (Controller)
@@ -37,7 +37,7 @@ void ABlasterPlayerState::OnRep_Score()
 	//OnRep只在客户端执行，更新分数
 	//会多次调用，使用三元可以减少Cast次数
 	Character = Character == nullptr ? Cast<ABlasterCharacter>(GetPawn()) : Character;
-	if (Character && Character->Controller)
+	if (Character)
 	{
 		Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
 		if (Controller)
@@ -51,7 +51,7 @@ void ABlasterPlayerState::AddToDefeats(int32 DefeatsAmount)
 {
 	Defeats += DefeatsAmount;
 	Character = Character == nullptr ? Cast<ABlasterCharacter>(GetPawn()) : Character;
-	if (Character && Character->Controller)
+	if (Character)
 	{
 		Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
 		if (Controller)
@@ -64,7 +64,7 @@ void ABlasterPlayerState::AddToDefeats(int32 DefeatsAmount)
 void ABlasterPlayerState::OnRep_Defeats()
 {
 	Character = Character == nullptr ? Cast<ABlasterCharacter>(GetPawn()) : Character;
-	if (Character && Character->Controller)
+	if (Character)
 	{
 		Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
 		if (Controller)

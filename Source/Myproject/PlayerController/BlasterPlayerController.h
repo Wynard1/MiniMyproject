@@ -22,6 +22,8 @@ public:
 	void SetHUDScore(float Score);				//这个函数是继承的playerstate自带的，参数是float
 	void SetHUDDefeats(int32 Defeats);			//我们自建的，用整数
 
+	void SetHUDWeaponAmmo(int32 Ammo);
+
 	//重生时更换Pawn会调用
 	virtual void OnPossess(APawn* InPawn) override;
 protected:

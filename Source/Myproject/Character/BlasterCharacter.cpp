@@ -104,6 +104,12 @@ void ABlasterCharacter::Elim()	//only on server
 
 void ABlasterCharacter::MulticastElim_Implementation()
 {
+	//被击杀的时候弹药清0
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDWeaponAmmo(0);
+	}
+	
 	bElimmed = true;
 	PlayElimMontage();
 
