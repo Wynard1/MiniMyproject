@@ -98,7 +98,9 @@ void AWeapon::SetHUDAmmo()
 
 void AWeapon::SpendRound()
 {
-	--Ammo;
+	//将Ammo-1但小于0的时候clamp为0
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
+	
 	SetHUDAmmo();
 }
 
@@ -229,4 +231,9 @@ void AWeapon::Dropped()
 
 	BlasterOwnerCharacter = nullptr;
 	BlasterOwnerController = nullptr;
+}
+
+bool AWeapon::IsEmpty()
+{
+	return Ammo <= 0;
 }

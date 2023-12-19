@@ -90,7 +90,7 @@ void UCombatComponent::FireButtonPressed(bool bPressed)//左键开火_服务器
 
 void UCombatComponent::Fire()
 {
-	if (bCanFire && EquippedWeapon)
+	if (CanFire() && EquippedWeapon)
 	{
 		bCanFire = false;
 
@@ -413,3 +413,10 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 	}
 }
 
+bool UCombatComponent::CanFire()
+{
+	if (EquippedWeapon == nullptr) return false;
+
+	//是否为空 或者 是否能开火（旧）
+	return !EquippedWeapon->IsEmpty() || !bCanFire;
+}
