@@ -24,6 +24,8 @@ public:
 
 	//开火蒙太奇播放
 	void PlayFireMontage(bool bAiming);
+
+	void PlayReloadMontage();
 	
 	//播放被击杀动画
 	void PlayElimMontage();
@@ -47,6 +49,7 @@ protected:
 	void LookUp(float Value);
 	void EquipButtonPressed();
 	void CrouchButtonPressed();
+	void ReloadButtonPressed();
 	void AimButtonPressed();
 	void AimButtonReleased();
 	void AimOffset(float DeltaTime);
@@ -107,9 +110,15 @@ private:
 
 	void TurnInPlace(float DeltaTime);//用于设置TurningInPlace的函数。传入deltatime为插值做准备
 
+	/**
+	* Animation montages
+	*/
 	//蒙太奇类型的变量，在蓝图里设置
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* FireWeaponMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ReloadMontage;
 
 	//受击Montage
 	UPROPERTY(EditAnywhere, Category = Combat)

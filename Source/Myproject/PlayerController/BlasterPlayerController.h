@@ -24,6 +24,8 @@ public:
 
 	void SetHUDWeaponAmmo(int32 Ammo);
 
+	void SetHUDCarriedAmmo(int32 Ammo);
+
 	//重生时更换Pawn会调用
 	virtual void OnPossess(APawn* InPawn) override;
 protected:

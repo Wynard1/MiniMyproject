@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Myproject/HUD/BlasterHUD.h"
+#include "Myproject/Weapon/WeaponTypes.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LENGTH 80000.f
@@ -23,6 +24,8 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+
+	void Reload();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -49,6 +52,9 @@ protected:
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 
 	void SetHUDCrosshairs(float DeltaTime);
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
 
 private:
 	UPROPERTY()
@@ -120,7 +126,26 @@ private:
 
 	bool CanFire();
 
-public:	
+	// Carried ammo for the currently-equipped weapon
+	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
 
+	//客户端复制notify，里面只有一个SetHUDCarriedAmmo(CarriedAmmo)
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+
+	//存储每个弹药的数据结构
+	TMap<EWeaponType, int32> CarriedAmmoMap;
+
+	/*
+	初始化CarriedAmmo
+	*/
+	UPROPERTY(EditAnywhere)
+	int32 StartingARAmmo = 45;
+
+	void InitializeCarriedAmmo();
+
+public:	
+	 
 		
 };
