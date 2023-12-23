@@ -287,14 +287,18 @@ void ABlasterCharacter::PlayFireMontage(bool bAiming)
 
 void ABlasterCharacter::PlayReloadMontage()
 {
+	//没有武器不能播放
 	if (Combat1 == nullptr || Combat1->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && ReloadMontage)
 	{
 		AnimInstance->Montage_Play(ReloadMontage);
+		
+		//将播放蒙太奇，需要跳转到相应的蒙太奇部分。
 		FName SectionName;
 
+		//选择动画要播的段落
 		switch (Combat1->EquippedWeapon->GetWeaponType())
 		{
 		case EWeaponType::EWT_AssaultRifle:
@@ -302,6 +306,7 @@ void ABlasterCharacter::PlayReloadMontage()
 			break;
 		}
 
+		//根据名字播放动画段落
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
@@ -762,4 +767,10 @@ FVector ABlasterCharacter::GetHitTarget() const
 {
 	if (Combat1 == nullptr) return FVector();
 	return Combat1->HitTarget;
+}
+
+ECombatState ABlasterCharacter::GetCombatState() const
+{
+	if (Combat1 == nullptr) return ECombatState::ECS_MAX;
+	return Combat1->CombatState;
 }

@@ -7,6 +7,7 @@
 #include "Myproject/BlasterTypes/TurningInPlace.h"
 #include "Myproject/Interfaces/InteractWithCrosshairsInterface.h"
 #include "Components/TimelineComponent.h"
+#include "Myproject/BlasterTypes/CombatState.h"
 #include "BlasterCharacter.generated.h"
 
 
@@ -93,7 +94,8 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
-	UPROPERTY(VisibleAnywhere)
+	//BlueprintReadOnly 加上 meta = (AllowPrivateAccess = "true") 使此变量可以在蓝图里调用
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* Combat1;
 
 	UFUNCTION(Server, Reliable)
@@ -244,4 +246,6 @@ public:
 	//获取血量的getter
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+
+	ECombatState GetCombatState() const;
 };

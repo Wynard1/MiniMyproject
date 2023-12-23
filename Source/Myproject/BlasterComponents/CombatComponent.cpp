@@ -34,6 +34,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	//携带弹药只会复制到拥有它的客户端，这将节省一些带宽
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
+
+	DOREPLIFETIME(UCombatComponent, CombatState);
 }
 
 void UCombatComponent::BeginPlay()
@@ -206,7 +208,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::Reload()
 {
-	if (CarriedAmmo > 0)
+	if (CarriedAmmo > 0 && CombatState != ECombatState::ECS_Reloading)
 	{
 		ServerReload();
 	}
@@ -215,6 +217,31 @@ void UCombatComponent::Reload()
 void UCombatComponent::ServerReload_Implementation()
 {
 	if (Character == nullptr) return;
+	CombatState = ECombatState::ECS_Reloading;		//一旦在这里设置好，它就会复制给所有客户，OnrepNotify也会被调用。
+	HandleReload();	//通用换弹函数
+}
+
+void UCombatComponent::FinishReloading()
+{
+	if (Character == nullptr) return;
+	if (Character->HasAuthority())
+	{
+		CombatState = ECombatState::ECS_Unoccupied;
+	}
+}
+
+void UCombatComponent::OnRep_CombatState()	//客户端换弹处理：只在CombatState改变的时候执行
+{
+	switch (CombatState)
+	{
+	case ECombatState::ECS_Reloading:
+		HandleReload();
+		break;
+	}
+}
+
+void UCombatComponent::HandleReload()
+{
 
 	Character->PlayReloadMontage();
 }
