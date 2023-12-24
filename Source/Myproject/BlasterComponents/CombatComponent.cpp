@@ -13,6 +13,7 @@
 #include "Myproject/PlayerController/BlasterPlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "TimerManager.h"
+#include "Sound/SoundCue.h"
 
 
 
@@ -201,6 +202,15 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	END OF 装备武器的时候初始化carried ammo
 	*/
 
+	//捡起武器时播放音效 
+	if (EquippedWeapon->EquipSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			EquippedWeapon->EquipSound,
+			Character->GetActorLocation()
+		);
+	}
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
@@ -319,6 +329,16 @@ void UCombatComponent::OnRep_EquippedWeapon()
 
 		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		Character->bUseControllerRotationYaw = true;
+
+		////捡起武器时播放音效
+		if (EquippedWeapon->EquipSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				EquippedWeapon->EquipSound,
+				Character->GetActorLocation()
+			);
+		}
 	}
 }
 
