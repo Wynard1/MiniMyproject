@@ -149,7 +149,7 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 	if (EquippedWeapon == nullptr) return;
 
 	//如果在瞄准，就播放FireMontage
-	if (Character)
+	if (Character && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		//角色开枪蒙太奇
 		Character->PlayFireMontage(bAiming);
@@ -216,7 +216,7 @@ void UCombatComponent::Reload()
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	if (Character == nullptr) return;
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
 	CombatState = ECombatState::ECS_Reloading;		//一旦在这里设置好，它就会复制给所有客户，OnrepNotify也会被调用。
 	HandleReload();	//通用换弹函数
 }
@@ -227,8 +227,43 @@ void UCombatComponent::FinishReloading()
 	if (Character->HasAuthority())
 	{
 		CombatState = ECombatState::ECS_Unoccupied;
+
+		//完成换弹时更新主弹药和备弹药
+		UpdateAmmoValues();
+	}
+	
+	//瞄准结束后依旧按着左键，那就直接开火
+	if (bFireButtonPressed)
+	{
+		Fire();
 	}
 }
+
+void UCombatComponent::UpdateAmmoValues()
+{
+	if (Character == nullptr || EquippedWeapon == nullptr) return;
+	
+	//调用备弹计算函数
+	int32 ReloadAmount = AmountToReload();
+
+	//携带弹药量(备弹)更新
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= ReloadAmount;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+
+	//更新备弹HUD
+	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+
+	//增加当前使用弹夹的弹药
+	EquippedWeapon->AddAmmo(-ReloadAmount);
+}
+
 
 void UCombatComponent::OnRep_CombatState()	//客户端换弹处理：只在CombatState改变的时候执行
 {
@@ -236,6 +271,13 @@ void UCombatComponent::OnRep_CombatState()	//客户端换弹处理：只在CombatState改变
 	{
 	case ECombatState::ECS_Reloading:
 		HandleReload();
+		break;
+
+	case ECombatState::ECS_Unoccupied:
+		if (bFireButtonPressed)
+		{
+			Fire();
+		}
 		break;
 	}
 }
@@ -245,6 +287,21 @@ void UCombatComponent::HandleReload()
 
 	Character->PlayReloadMontage();
 }
+
+int32 UCombatComponent::AmountToReload()
+{
+	if (EquippedWeapon == nullptr) return 0;
+	int32 RoomInMag = EquippedWeapon->GetMagCapacity() - EquippedWeapon->GetAmmo();
+
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		int32 AmountCarried = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+		int32 Least = FMath::Min(RoomInMag, AmountCarried);
+		return FMath::Clamp(RoomInMag, 0, Least);
+	}
+	return 0;
+}
+
 
 void UCombatComponent::OnRep_EquippedWeapon()
 {
@@ -486,8 +543,9 @@ bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
 
-	//是否为空 或者 是否能开火（旧）
-	return !EquippedWeapon->IsEmpty() || !bCanFire;
+	//持有武器 且 达到开火最快间隔时间 且 状态是无占用(不在换弹期间)
+	//(只要有弹药，可以通过重新上膛来打断武器射击。)
+	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
 }
 
 void UCombatComponent::OnRep_CarriedAmmo()
