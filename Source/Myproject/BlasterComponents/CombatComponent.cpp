@@ -137,6 +137,12 @@ void UCombatComponent::FireTimerFinished()
 	{
 		Fire();
 	}
+	
+	//FIREµ¯¼Ð´ò¿ÕÁË×Ô¶¯»»µ¯
+	if (EquippedWeapon->IsEmpty())
+	{
+		Reload();
+	}
 }
 
 void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)		//×ó¼ü¿ª»ð_RPC
@@ -211,6 +217,13 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 			Character->GetActorLocation()
 		);
 	}
+
+	//¼ñÆðÎäÆ÷µÄÊ±ºò¿Õµ¯¼Ð×Ô¶¯»»µ¯
+	if (EquippedWeapon->IsEmpty())
+	{
+		Reload();
+	}
+
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
