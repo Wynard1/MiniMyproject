@@ -8,6 +8,39 @@
 #include "GameFramework/PlayerStart.h"
 #include "Myproject/PlayerState/BlasterPlayerState.h"
 
+
+ABlasterGameMode::ABlasterGameMode()
+{
+	//开关，最开始会先进入“开始前状态”
+	bDelayedStart = true;
+}
+
+void ABlasterGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	//打点，记录最开始的时间
+	LevelStartingTime = GetWorld()->GetTimeSeconds();
+}
+
+void ABlasterGameMode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (MatchState == MatchState::WaitingToStart)
+	{
+		//每个TICK重新开始计算准备时间
+		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		
+		//倒计时到了
+		if (CountdownTime <= 0.f)
+		{
+			//从"开始前"过渡到Play
+			StartMatch();
+		}
+	}
+}
+
 void ABlasterGameMode::PlayerEliminated(class ABlasterCharacter* ElimmedCharacter, class ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)	//淘汰
 {
 	if (AttackerController == nullptr || AttackerController->PlayerState == nullptr) return;

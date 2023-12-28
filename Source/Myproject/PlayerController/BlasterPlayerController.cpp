@@ -7,11 +7,12 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Myproject/Character/BlasterCharacter.h"
+#include "Net/UnrealNetwork.h"
 
 void ABlasterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	BlasterHUD = Cast<ABlasterHUD>(GetHUD());
 }
 
