@@ -41,6 +41,24 @@ void ABlasterGameMode::Tick(float DeltaTime)
 	}
 }
 
+void ABlasterGameMode::OnMatchStateSet()
+{
+	/*
+	现在每当matchstate在游戏模式中改变时，它就会在所有玩家控制器中循环
+	*/
+	Super::OnMatchStateSet();
+
+	//循环遍历所有的玩家控制器，进入MatchState
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ABlasterPlayerController* BlasterPlayer = Cast<ABlasterPlayerController>(*It);
+		if (BlasterPlayer)
+		{
+			BlasterPlayer->OnMatchStateSet(MatchState);
+		}
+	}
+}
+
 void ABlasterGameMode::PlayerEliminated(class ABlasterCharacter* ElimmedCharacter, class ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)	//淘汰
 {
 	if (AttackerController == nullptr || AttackerController->PlayerState == nullptr) return;
