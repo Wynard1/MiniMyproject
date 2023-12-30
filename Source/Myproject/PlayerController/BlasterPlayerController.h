@@ -28,6 +28,8 @@ public:
 
 	void SetHUDMatchCountdown(float CountdownTime);
 
+	void SetHUDAnnouncementCountdown(float CountdownTime);
+
 	//重生时更换Pawn会调用
 	virtual void OnPossess(APawn* InPawn) override;
 
@@ -40,6 +42,8 @@ public:
 	virtual void ReceivedPlayer() override; // Sync with server clock as soon as possible
 
 	void OnMatchStateSet(FName State);
+
+	void HandleMatchHasStarted();
 protected:
 	virtual void BeginPlay() override;
 
@@ -70,12 +74,22 @@ protected:
 
 	void CheckTimeSync(float DeltaTime);
 
+	UFUNCTION(Server, Reliable)
+	void ServerCheckMatchState();
+
+	UFUNCTION(Client, Reliable)
+	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float StartingTime);
+
 private:
 	UPROPERTY()
 	class ABlasterHUD* BlasterHUD;
 
 	//初始时间(总对局时间)
-	float MatchTime = 120.f;
+	//float MatchTime = 120.f;
+
+	float LevelStartingTime = 0.f;
+	float MatchTime = 0.f;
+	float WarmupTime = 0.f;
 
 	//剩余时间
 	uint32 CountdownInt = 0;

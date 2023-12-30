@@ -44,6 +44,18 @@ public:
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
 
+	//蓝图设置项
+	UPROPERTY(EditAnywhere, Category = "Announcements")
+	TSubclassOf<UUserWidget> AnnouncementClass;
+
+	//函数变量存储项
+	UPROPERTY()
+	class UAnnouncement* Announcement;
+
+	//显示用函数
+	void AddAnnouncement();
+
+
 protected:
 	virtual void BeginPlay() override;
 
