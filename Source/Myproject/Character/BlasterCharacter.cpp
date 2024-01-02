@@ -74,6 +74,8 @@ void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	//复制注册
 	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ABlasterCharacter, Health);
+
+	DOREPLIFETIME(ABlasterCharacter, bDisableGameplay);
 }
 
 void ABlasterCharacter::OnRep_ReplicatedMovement()
@@ -130,13 +132,12 @@ void ABlasterCharacter::MulticastElim_Implementation()
 
 	// Disable character movement
 	//被击杀后禁止角色WASD移动&禁止通过转视角改变角色朝向
-	GetCharacterMovement()->DisableMovement();
-	GetCharacterMovement()->StopMovementImmediately();
-
-	if (BlasterPlayerController)
+	bDisableGameplay = true;
+	
+	//被击杀后停止开火
+	if (Combat1)
 	{
-		//停止输入(开火)
-		DisableInput(BlasterPlayerController);
+		Combat1->FireButtonPressed(false);
 	}
 	
 	// Disable collision
@@ -191,6 +192,16 @@ void ABlasterCharacter::Destroyed()
 	{
 		ElimBotComponent->DestroyComponent();
 	}
+
+	//局内的时候武器是不消除的，所以要获取GetMatchState用于条件判断
+	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = BlasterGameMode && BlasterGameMode->GetMatchState() != MatchState::InProgress;
+
+	//终局武器自毁
+	if (Combat1 && Combat1->EquippedWeapon && bMatchNotInProgress)
+	{
+		Combat1->EquippedWeapon->Destroy();
+	}
 }
 
 void ABlasterCharacter::BeginPlay()
@@ -211,6 +222,22 @@ void ABlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	RotateInPlace(DeltaTime);
+	HideCameraIfCharacterClose();
+
+	//每帧通过+0.0同步分数
+	PollInit();
+}
+
+void ABlasterCharacter::RotateInPlace(float DeltaTime)
+{
+	if (bDisableGameplay)
+	{
+		bUseControllerRotationYaw = false;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
+
 	//客户端或者本地，则执行完整AimOffset
 	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
 	{
@@ -227,10 +254,7 @@ void ABlasterCharacter::Tick(float DeltaTime)
 		CalculateAO_Pitch();
 	}
 
-	HideCameraIfCharacterClose();
 
-	//每帧通过+0.0同步分数
-	PollInit();
 }
 
 void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -363,6 +387,8 @@ void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 
 void ABlasterCharacter::MoveForward(float Value)
 {
+	if (bDisableGameplay) return;
+	
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -373,6 +399,8 @@ void ABlasterCharacter::MoveForward(float Value)
 
 void ABlasterCharacter::MoveRight(float Value)
 {
+	if (bDisableGameplay) return;
+	
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -393,6 +421,8 @@ void ABlasterCharacter::LookUp(float Value)
 
 void ABlasterCharacter::EquipButtonPressed()
 {
+	if (bDisableGameplay) return;
+	
 	if (Combat1)
 	{
 		if (HasAuthority())
@@ -416,6 +446,8 @@ void ABlasterCharacter::ServerEquipButtonPressed_Implementation()
 
 void ABlasterCharacter::CrouchButtonPressed()
 {
+	if (bDisableGameplay) return;
+
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -429,6 +461,8 @@ void ABlasterCharacter::CrouchButtonPressed()
 
 void ABlasterCharacter::ReloadButtonPressed()
 {
+	if (bDisableGameplay) return;
+	
 	if (Combat1)
 	{
 		Combat1->Reload();
@@ -437,6 +471,8 @@ void ABlasterCharacter::ReloadButtonPressed()
 
 void ABlasterCharacter::AimButtonPressed()
 {
+	if (bDisableGameplay) return;
+	
 	if (Combat1)
 	{
 		Combat1->SetAiming(true);
@@ -445,6 +481,8 @@ void ABlasterCharacter::AimButtonPressed()
 
 void ABlasterCharacter::AimButtonReleased()
 {
+	if (bDisableGameplay) return;
+	
 	if (Combat1)
 	{
 		Combat1->SetAiming(false);
@@ -568,6 +606,8 @@ void ABlasterCharacter::SimProxiesTurn()
 
 void ABlasterCharacter::Jump()
 {
+	if (bDisableGameplay) return;
+	
 	if (bIsCrouched)//蹲下的时候，不蹲了
 	{
 		UnCrouch();
@@ -581,6 +621,8 @@ void ABlasterCharacter::Jump()
 //按下鼠标左键的效果
 void ABlasterCharacter::FireButtonPressed()
 {
+	if (bDisableGameplay) return;
+
 	if (Combat1)
 	{
 		Combat1->FireButtonPressed(true);
@@ -589,6 +631,8 @@ void ABlasterCharacter::FireButtonPressed()
 
 void ABlasterCharacter::FireButtonReleased()
 {
+	if (bDisableGameplay) return;
+	
 	if (Combat1)
 	{
 		Combat1->FireButtonPressed(false);

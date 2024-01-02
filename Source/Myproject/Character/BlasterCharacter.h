@@ -41,6 +41,8 @@ public:
 
 	virtual void Destroyed() override;
 
+	UPROPERTY(Replicated)
+	bool bDisableGameplay = false;
 protected:
 	virtual void BeginPlay() override;
 
@@ -78,6 +80,7 @@ protected:
 	// Poll for any relelvant classes and initialize our HUD
 	void PollInit();
 
+	void RotateInPlace(float DeltaTime);
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class USpringArmComponent* CameraBoom;
@@ -248,4 +251,7 @@ public:
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 
 	ECombatState GetCombatState() const;
+
+	FORCEINLINE UCombatComponent* GetCombat() const { return Combat1; }
+	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
 };

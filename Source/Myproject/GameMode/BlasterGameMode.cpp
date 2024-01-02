@@ -7,7 +7,13 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 #include "Myproject/PlayerState/BlasterPlayerState.h"
+#include "Myproject/GameState/BlasterGameState.h"
 
+
+namespace MatchState
+{
+	const FName Cooldown = FName("Cooldown");
+}
 
 ABlasterGameMode::ABlasterGameMode()
 {
@@ -27,16 +33,37 @@ void ABlasterGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//赛前
 	if (MatchState == MatchState::WaitingToStart)
 	{
 		//每个TICK重新开始计算准备时间
 		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
-		
-		//倒计时到了
+
+		//倒计时到了，进入Inprogress
 		if (CountdownTime <= 0.f)
 		{
 			//从"开始前"过渡到Play
 			StartMatch();
+		}
+	}
+
+	//局内
+	else if (MatchState == MatchState::InProgress)
+	{
+		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+
+	//赛后冷却环节
+	else if (MatchState == MatchState::Cooldown)
+	{
+		CountdownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f)
+		{
+			RestartGame();
 		}
 	}
 }
@@ -66,10 +93,15 @@ void ABlasterGameMode::PlayerEliminated(class ABlasterCharacter* ElimmedCharacte
 	ABlasterPlayerState* AttackerPlayerState = AttackerController ? Cast<ABlasterPlayerState>(AttackerController->PlayerState) : nullptr;
 	ABlasterPlayerState* VictimPlayerState = VictimController ? Cast<ABlasterPlayerState>(VictimController->PlayerState) : nullptr;
 
+	ABlasterGameState* BlasterGameState = GetGameState<ABlasterGameState>();
+	
 	//击杀后加分
-	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
+	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState && BlasterGameState)
 	{
 		AttackerPlayerState->AddToScore(1.f);
+
+		//当把击杀分数加进去后，检查他们是否属于得分最高的玩家。
+		BlasterGameState->UpdateTopScore(AttackerPlayerState);
 	}
 
 	//被击杀后记录死亡次数

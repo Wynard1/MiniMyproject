@@ -12,6 +12,9 @@
 #include "Myproject/PlayerState/BlasterPlayerState.h"
 #include "Myproject/HUD/Announcement.h"
 #include "Kismet/GameplayStatics.h"
+#include "Myproject/BlasterComponents/CombatComponent.h"
+#include "Myproject/Weapon/Weapon.h"
+#include "Myproject/GameState/BlasterGameState.h"
 
 void ABlasterPlayerController::BeginPlay()
 {
@@ -65,19 +68,21 @@ void ABlasterPlayerController::ServerCheckMatchState_Implementation()
 		//从Gamemode里获取数据，开始流程
 		WarmupTime = GameMode->WarmupTime;
 		MatchTime = GameMode->MatchTime;
+		CooldownTime = GameMode->CooldownTime;
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
 
 		//客户端获得当前流程进度
-		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, LevelStartingTime);
+		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
 	}
 }
 
-void ABlasterPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float StartingTime)
+void ABlasterPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime)
 {
 	//客户端拿到当前流程进度，执行流程
 	WarmupTime = Warmup;
 	MatchTime = Match;
+	CooldownTime = Cooldown;
 	LevelStartingTime = StartingTime;
 	MatchState = StateOfMatch;
 	OnMatchStateSet(MatchState);
@@ -211,6 +216,13 @@ void ABlasterPlayerController::SetHUDMatchCountdown(float CountdownTime)
 
 	if (bHUDValid)
 	{
+		//状态刚切换的时候，时间会有短暂负数的时候，短暂隐藏
+		if (CountdownTime < 0.f)
+		{
+			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText());
+			return;
+		}
+
 		//设置分和秒
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
@@ -230,6 +242,13 @@ void ABlasterPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 
 	if (bHUDValid)
 	{
+		//状态刚切换的时候，时间会有短暂负数的时候，短暂隐藏
+		if (CountdownTime < 0.f)
+		{
+			BlasterHUD->Announcement->WarmupTime->SetText(FText());
+			return;
+		}
+		
 		//设置分和秒
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
@@ -259,6 +278,8 @@ void ABlasterPlayerController::SetHUDTime()
 	float TimeLeft = 0.f;
 	if (MatchState == MatchState::WaitingToStart) TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
 	else if (MatchState == MatchState::InProgress) TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+	else if (MatchState == MatchState::Cooldown) TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	/*
 	END OF 计算各个阶段的时间
@@ -267,8 +288,8 @@ void ABlasterPlayerController::SetHUDTime()
 	//HUD里设置各个阶段的时间
 	if (CountdownInt != SecondsLeft)
 	{
-		//等待阶段
-		if (MatchState == MatchState::WaitingToStart)
+		//倒计时，等待阶段和结束缓冲阶段共用
+		if (MatchState == MatchState::WaitingToStart || MatchState == MatchState::Cooldown)
 		{
 			SetHUDAnnouncementCountdown(TimeLeft);
 		}
@@ -343,6 +364,11 @@ void ABlasterPlayerController::OnMatchStateSet(FName State)
 	{
 		HandleMatchHasStarted();
 	}
+
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
+	}
 }
 
 void ABlasterPlayerController::OnRep_MatchState()
@@ -350,6 +376,11 @@ void ABlasterPlayerController::OnRep_MatchState()
 	if (MatchState == MatchState::InProgress)
 	{
 		HandleMatchHasStarted();
+	}
+
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
 	}
 }
 
@@ -366,5 +397,92 @@ void ABlasterPlayerController::HandleMatchHasStarted()
 		{
 			BlasterHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
+	}
+}
+
+void ABlasterPlayerController::HandleCooldown()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	if (BlasterHUD)
+	{
+		//隐藏局内HUD
+		BlasterHUD->CharacterOverlay->RemoveFromParent();
+		
+		bool bHUDValid = BlasterHUD->Announcement &&
+			BlasterHUD->Announcement->AnnouncementText &&
+			BlasterHUD->Announcement->InfoText;
+
+		//展示Announcement
+		if (bHUDValid)
+		{
+			//静态Announcement的HUD显示复用
+			BlasterHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+
+			//HUD内容更改
+			FString AnnouncementText("New Match Starts In:");
+			BlasterHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+			
+			/*
+			显示获胜者
+			*/
+			ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+			
+			ABlasterPlayerState* BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();	//本地玩家
+			
+			if (BlasterGameState && BlasterPlayerState)
+			{
+				//获得获胜者
+				TArray<ABlasterPlayerState*> TopPlayers = BlasterGameState->TopScoringPlayers;
+
+				//本地存储获胜者，用于后续打印
+				FString InfoTextString;
+				
+				/*
+				判断获胜者，取决于这个数组中有多少玩家
+				*/
+				//没人获胜
+				if (TopPlayers.Num() == 0)
+				{
+					InfoTextString = FString("There is no winner.");
+				}
+
+				//一个本地玩家获胜
+				else if (TopPlayers.Num() == 1 && TopPlayers[0] == BlasterPlayerState)
+				{
+					InfoTextString = FString("You are the winner!");
+				}
+
+				//一个非本地玩家获胜
+				else if (TopPlayers.Num() == 1)
+				{
+					//GetPlayerName()返回FString，需要星号*
+					InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopPlayers[0]->GetPlayerName());
+				}
+				
+				//多个玩家
+				else if (TopPlayers.Num() > 1)
+				{
+					InfoTextString = FString("Players tied for the win:\n");
+					for (auto TiedPlayer : TopPlayers)	//每轮赋值给TiedPlayer
+					{
+						//Append：在尾部添加
+						InfoTextString.Append(FString::Printf(TEXT("%s\n"), *TiedPlayer->GetPlayerName()));
+					}
+				}
+
+				//打印获胜者
+				BlasterHUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
+			}
+			/*
+			END OF 显示获胜者
+			*/
+		}
+	}
+
+	ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(GetPawn());
+	if (BlasterCharacter && BlasterCharacter->GetCombat())
+	{
+		BlasterCharacter->bDisableGameplay = true;
+		BlasterCharacter->GetCombat()->FireButtonPressed(false);
 	}
 }
