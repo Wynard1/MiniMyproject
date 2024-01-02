@@ -390,7 +390,8 @@ void ABlasterPlayerController::HandleMatchHasStarted()
 	if (BlasterHUD)
 	{
 		//展示局内HUD
-		BlasterHUD->AddCharacterOverlay();
+		//BlasterHUD->AddCharacterOverlay();
+		if (BlasterHUD->CharacterOverlay == nullptr) BlasterHUD->AddCharacterOverlay();
 		
 		//隐藏Announcement
 		if (BlasterHUD->Announcement)

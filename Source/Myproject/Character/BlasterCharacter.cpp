@@ -133,6 +133,7 @@ void ABlasterCharacter::MulticastElim_Implementation()
 	// Disable character movement
 	//被击杀后禁止角色WASD移动&禁止通过转视角改变角色朝向
 	bDisableGameplay = true;
+	GetCharacterMovement()->DisableMovement();
 	
 	//被击杀后停止开火
 	if (Combat1)
