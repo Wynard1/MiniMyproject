@@ -3,7 +3,7 @@
 
 #include "Projectile.h"
 #include "Components/BoxComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
+//#include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
@@ -42,8 +42,8 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
 
 	//构建射弹移动组件并挂在到root
-	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));//自动添加到根(CollisionBox)
-	ProjectileMovementComponent->bRotationFollowsVelocity = true;//初始化、这将确保子弹的旋转与速度保持一致
+	//ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));//自动添加到根(CollisionBox)
+	//ProjectileMovementComponent->bRotationFollowsVelocity = true;//初始化、这将确保子弹的旋转与速度保持一致
 																 //所以如果加上重力的衰减，旋转会沿着那个轨迹。
 }
 
