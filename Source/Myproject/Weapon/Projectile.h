@@ -31,24 +31,6 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float Damage = 20.f;
 
-private:
-	//在找到合适的理由之前不暴露到蓝图 
-	UPROPERTY(EditAnywhere)
-	class UBoxComponent* CollisionBox;
-
-	//射弹移动组件
-	UPROPERTY(VisibleAnywhere)
-	class UProjectileMovementComponent* ProjectileMovementComponent;
-
-	//粒子生成
-	UPROPERTY(EditAnywhere)
-	class UParticleSystem* Tracer;
-
-	//粒子生成后存储
-	UPROPERTY()
-	class UParticleSystemComponent* TracerComponent;
-
-	
 	//粒子系统
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticles;
@@ -56,6 +38,24 @@ private:
 	//粒子声音
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ImpactSound;
+
+	//在找到合适的理由之前不暴露到蓝图 
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* CollisionBox;
+
+private:
+	//射弹移动组件
+	UPROPERTY(VisibleAnywhere)
+	class UProjectileMovementComponent* ProjectileMovementComponent;
+
+	//粒子生成
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* Tracer;
+
+	//粒子生成后存储
+	UPROPERTY()
+	class UParticleSystemComponent* TracerComponent;
+
 
 public:	
 
