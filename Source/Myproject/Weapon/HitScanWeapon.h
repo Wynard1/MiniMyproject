@@ -33,4 +33,8 @@ private:
      */
     UPROPERTY(EditAnywhere, Category = "Effects")
     class UParticleSystem* ImpactParticles;
+
+    //Î²ÆøÁ£×Ó
+    UPROPERTY(EditAnywhere)
+    UParticleSystem* BeamParticles;
 };
