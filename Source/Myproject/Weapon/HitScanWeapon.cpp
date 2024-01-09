@@ -3,6 +3,7 @@
 #include "Myproject/Character/BlasterCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "particles/ParticleSystemComponent.h"
+#include "Sound/SoundCue.h"
 
 // 开火函数，处理武器的射击逻辑
 void AHitScanWeapon::Fire(const FVector& HitTarget)
@@ -66,8 +67,19 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 						FireHit.ImpactNormal.Rotation() // 碰撞法线的旋转
 					);
 				}
+
+				// 播放命中声音
+				if (HitSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(
+						this,
+						HitSound,
+						FireHit.ImpactPoint
+					);
+				}
 			}
 
+			// 生成光束特效
 			if (BeamParticles)
 			{
 				// 生成光束特效，并设置其末端位置
@@ -82,6 +94,26 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 					Beam->SetVectorParameter(FName("Target"), BeamEnd);
 				}
 			}
+		}
+
+		// 生成枪口火焰特效
+		if (MuzzleFlash)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(
+				World,               // 当前世界的引用
+				MuzzleFlash,         // 枪口火焰特效
+				SocketTransform      // 武器枪口的位置和方向
+			);
+		}
+
+		// 播放射击声音
+		if (FireSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,                // 当前武器对象
+				FireSound,           // 射击声音
+				GetActorLocation()   // 获取当前武器所在的位置
+			);
 		}
 	}
 }

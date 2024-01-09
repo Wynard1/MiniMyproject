@@ -149,14 +149,23 @@ private:
 	/*
 	初始化CarriedAmmo
 	*/
+
+	// 初始弹药量：突击步枪
 	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmo = 45;
 
+	// 初始弹药量：火箭发射器
 	UPROPERTY(EditAnywhere)
 	int32 StartingRocketAmmo = 0;
 
+	// 初始弹药量：手枪
 	UPROPERTY(EditAnywhere)
 	int32 StartingPistolAmmo = 0;
+
+	// 初始弹药量：冲锋枪
+	UPROPERTY(EditAnywhere)
+	int32 StartingSMGAmmo = 0;
+
 
 	void InitializeCarriedAmmo();
 

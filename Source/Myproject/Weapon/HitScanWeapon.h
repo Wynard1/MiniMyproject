@@ -34,7 +34,19 @@ private:
     UPROPERTY(EditAnywhere, Category = "Effects")
     class UParticleSystem* ImpactParticles;
 
-    //尾气粒子
+    // 尾气粒子特效，可在编辑器中更改
     UPROPERTY(EditAnywhere)
     UParticleSystem* BeamParticles;
+
+    // 枪口火焰特效，可在编辑器中更改
+    UPROPERTY(EditAnywhere)
+    UParticleSystem* MuzzleFlash;
+
+    // 射击时播放的声音，可在编辑器中更改
+    UPROPERTY(EditAnywhere)
+    USoundCue* FireSound;
+
+    // 命中时播放的声音，可在编辑器中更改
+    UPROPERTY(EditAnywhere)
+    USoundCue* HitSound;
 };
