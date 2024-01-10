@@ -138,16 +138,47 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		if (WeaponType == EWeaponType::EWT_SubmachineGun)
+		{
+			// 如果装备的是冲锋枪(Submachine Gun)
+			// 启用查询和物理碰撞，使得武器可以与世界发生物理交互并检测碰撞
+			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+			// 启用重力，使得武器在世界中受到重力影响，类似真实物体的下落
+			WeaponMesh->SetEnableGravity(true);
+
+			// 将武器的碰撞响应设置为忽略所有通道，使其不会与其他对象产生碰撞
+			// 通常用于装备在角色身上时，避免与角色及其他物体发生碰撞
+			WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		}
+
 		break;
+	
 	case EWeaponState::EWS_Dropped:
 		//现在如果我们掉落武器，我们需要模拟物理并为武器设置碰撞
 		if (HasAuthority())
 		{
 			AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		}
+
+		// 启用模拟物理，使武器在世界中表现出物理属性，如重力和碰撞
 		WeaponMesh->SetSimulatePhysics(true);
+
+		// 启用重力，使武器在世界中受到重力影响，类似真实物体的下落
 		WeaponMesh->SetEnableGravity(true);
+
+		// 设置武器碰撞为查询和物理，允许与世界进行物理交互和碰撞检测
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		// 设置武器对所有通道的碰撞响应为阻挡（Block），使其与其他对象产生碰撞
+		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+
+		// 将武器对于Pawn通道的碰撞响应设置为忽略（Ignore），避免与角色产生碰撞
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+
+		// 将武器对于Camera通道的碰撞响应设置为忽略（Ignore），避免与相机产生碰撞
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 		break;
 	}
@@ -163,14 +194,44 @@ void AWeapon::OnRep_WeaponState()
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		//如果装备的是SMG 
+		if (WeaponType == EWeaponType::EWT_SubmachineGun)
+		{
+			// 如果装备的是冲锋枪(Submachine Gun)
+			// 启用查询和物理碰撞，使得武器可以与世界发生物理交互并检测碰撞
+			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+			// 启用重力，使得武器在世界中受到重力影响，类似真实物体的下落
+			WeaponMesh->SetEnableGravity(true);
+
+			// 将武器的碰撞响应设置为忽略所有通道，使其不会与其他对象产生碰撞
+			// 通常用于装备在角色身上时，避免与角色及其他物体发生碰撞
+			WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		}
+
 		break;
 
-
+	//现在如果我们掉落武器，我们需要模拟物理并为武器设置碰撞
 	case EWeaponState::EWS_Dropped:
-		//现在如果我们掉落武器，我们需要模拟物理并为武器设置碰撞
+
+		// 启用模拟物理，使武器在世界中表现出物理属性，如重力和碰撞
 		WeaponMesh->SetSimulatePhysics(true);
+
+		// 启用重力，使武器在世界中受到重力影响，类似真实物体的下落
 		WeaponMesh->SetEnableGravity(true);
+
+		// 设置武器碰撞为查询和物理，允许与世界进行物理交互和碰撞检测
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		// 设置武器对所有通道的碰撞响应为阻挡（Block），使其与其他对象产生碰撞
+		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+
+		// 将武器对于Pawn通道的碰撞响应设置为忽略（Ignore），避免与角色产生碰撞
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+
+		// 将武器对于Camera通道的碰撞响应设置为忽略（Ignore），避免与相机产生碰撞
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 		break;
 	}
