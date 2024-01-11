@@ -4,6 +4,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "WeaponTypes.h"
+
+#include "DrawDebugHelpers.h"
 
 // 开火函数，处理武器的射击逻辑
 void AHitScanWeapon::Fire(const FVector& HitTarget)
@@ -117,3 +121,44 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		}
 	}
 }
+
+
+FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
+{
+	/*
+	创建一个虚拟球
+	*/
+	FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();	// 计算从 TraceStart 到 HitTarget 的单位向量
+	
+	//将起始点 TraceStart 沿着指向目标的方向向量 ToTargetNormalized 移动了一定距离 DistanceToSphere。
+	FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;	// 计算虚拟球体的中心位置。
+
+	//在虚拟球内随机取一个点
+	//UKismetMathLibrary::RandomUnitVector() 返回一个单位球体表面上均匀分布的随机单位向量
+	//然后通过乘以 FMath::FRandRange(0.f, SphereRadius) 将其缩放到半径为 SphereRadius 的球体内。
+	FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);		
+
+	// 计算线段的结束位置
+	//将虚拟球体的中心位置 SphereCenter 和在球体内部随机选择的点 RandVec 相加，得到线段的终点。
+	FVector EndLoc = SphereCenter + RandVec;
+
+	// 计算线段的方向向量
+	//从 TraceStart 指向 EndLoc 的向量。
+	FVector ToEndLoc = EndLoc - TraceStart;
+
+	// 在虚拟球体的中心位置和线段结束位置处绘制调试球体
+	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Red, true);	//虚拟球体的中心位置
+	DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);	//线段的结束位置
+
+	// 绘制一条调试线，表示线段的路径.从 TraceStart 开始，沿着方向向量 ToEndLoc 绘制一条线段，长度被限制在 TRACE_LENGTH 内。
+	DrawDebugLine(
+		GetWorld(),
+		TraceStart,
+		FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size()), // 限制线段的长度
+		FColor::Cyan,
+		true);
+
+	// 返回线段的结束位置，确保线段的长度不超过 TRACE_LENGTH。
+	return FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size());
+}
+

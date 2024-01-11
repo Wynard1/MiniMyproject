@@ -21,6 +21,10 @@ public:
      */
     virtual void Fire(const FVector& HitTarget) override;
 
+protected:
+
+    FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
+
 private:
     /**
      * 武器造成的伤害数值
@@ -49,4 +53,20 @@ private:
     // 命中时播放的声音，可在编辑器中更改
     UPROPERTY(EditAnywhere)
     USoundCue* HitSound;
+
+    /**
+     * 使用散射来确定射线终点
+     */
+
+     // 武器散射属性
+    UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+    float DistanceToSphere = 800.f; // 到散射球的距离
+
+    UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+    float SphereRadius = 75.f; // 散射球半径
+
+    UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+    bool bUseScatter = false; // 是否使用散射
+
+
 };
