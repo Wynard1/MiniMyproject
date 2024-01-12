@@ -24,35 +24,35 @@ public:
 protected:
 
     FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
-
-private:
-    /**
-     * 武器造成的伤害数值
-     */
-    UPROPERTY(EditAnywhere, Category = "Weapon")
-    float Damage = 20.f;
-
-    /**
+    void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit);
+    /*
      * 碰撞产生的粒子效果
      */
     UPROPERTY(EditAnywhere, Category = "Effects")
     class UParticleSystem* ImpactParticles;
+    
+    // 命中时播放的声音
+    UPROPERTY(EditAnywhere, Category = "Weapon")
+    USoundCue* HitSound;
+    
+    /*
+     * 武器造成的伤害数值
+     */
+    UPROPERTY(EditAnywhere)
+    float Damage = 20.f;
 
-    // 尾气粒子特效，可在编辑器中更改
+private:
+    // 尾气粒子特效
     UPROPERTY(EditAnywhere)
     UParticleSystem* BeamParticles;
 
-    // 枪口火焰特效，可在编辑器中更改
+    // 枪口火焰特效
     UPROPERTY(EditAnywhere)
     UParticleSystem* MuzzleFlash;
 
-    // 射击时播放的声音，可在编辑器中更改
+    // 射击时播放的声音
     UPROPERTY(EditAnywhere)
     USoundCue* FireSound;
-
-    // 命中时播放的声音，可在编辑器中更改
-    UPROPERTY(EditAnywhere)
-    USoundCue* HitSound;
 
     /**
      * 使用散射来确定射线终点
