@@ -3,15 +3,15 @@
 
 #include "Projectile.h"
 #include "Components/BoxComponent.h"
-//#include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
 #include "Sound/SoundCue.h"
 #include "Myproject/Character/BlasterCharacter.h"
 #include "Myproject/Myproject.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
-// Sets default values
 
 
 AProjectile::AProjectile()
@@ -52,6 +52,7 @@ void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	//子弹尾迹
 	if (Tracer)
 	{
 		//赋值给我们.h里定义的TracerComponent
@@ -74,21 +75,76 @@ void AProjectile::BeginPlay()
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	/*
-	ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(OtherActor);
-	if (BlasterCharacter)
-	{
-		BlasterCharacter->MulticastHit();
-	}*/
-
 	Destroy();
 }
+
+void AProjectile::SpawnTrailSystem()
+{
+	if (TrailSystem)
+	{
+		//在根组件上生成拖尾系统
+		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,	// 拖尾系统的模板
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false
+		);
+	}
+}
+
+void AProjectile::ExplodeDamage()
+{
+	// 获取发射者Pawn
+	APawn* FiringPawn = GetInstigator();
+	if (FiringPawn && HasAuthority())
+	{
+		// 获取发射者Controller
+		AController* FiringController = FiringPawn->GetController();
+		if (FiringController)
+		{
+			// 应用衰减的伤害
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this, // 世界上下文对象
+				Damage, // 基础伤害
+				10.f, // 最小伤害
+				GetActorLocation(), // 伤害的中心位置
+				DamageInnerRadius, // 伤害内半径
+				DamageOuterRadius, // 伤害外半径
+				1.f, // 伤害衰减
+				UDamageType::StaticClass(), // 伤害类型
+				TArray<AActor*>(), // 忽略的Actors数组（空数组表示有自伤）
+				this, // 造成伤害的Actor
+				FiringController // 发起伤害的Controller
+			);
+		}
+	}
+}
+
 
 // Called every frame
 void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AProjectile::StartDestroyTimer()
+{
+	// 使用世界计时器管理器设置一个定时器
+	GetWorldTimerManager().SetTimer(
+		DestroyTimer,                 // Timer句柄，用于引用此定时器
+		this,                         // 对象引用，此处是AProjectile对象
+		&AProjectile::DestroyTimerFinished,  // 回调函数，计时器到期时将调用DestroyTimerFinished函数
+		DestroyTime                   // 计时器持续时间，即在DestroyTime秒后调用回调函数
+	);
+}
+
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy();
 }
 
 void AProjectile::Destroyed()
