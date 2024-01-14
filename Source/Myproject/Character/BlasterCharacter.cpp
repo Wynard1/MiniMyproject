@@ -171,6 +171,17 @@ void ABlasterCharacter::MulticastElim_Implementation()
 			GetActorLocation()
 		);
 	}
+
+	bool bHideSniperScope = IsLocallyControlled() &&
+		Combat1 &&
+		Combat1->bAiming &&	//正在瞄准
+		Combat1->EquippedWeapon &&	//装备了武器
+		Combat1->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle;	//装备的是狙击枪
+	if (bHideSniperScope)
+	{
+		//关闭瞄准镜
+		ShowSniperScopeWidget(false);
+	}
 }
 
 void ABlasterCharacter::ElimTimerFinished() //only on server
@@ -339,6 +350,14 @@ void ABlasterCharacter::PlayReloadMontage()
 			break;
 
 		case EWeaponType::EWT_SubmachineGun:
+			SectionName = FName("Rifle");
+			break;
+
+		case EWeaponType::EWT_Shotgun:
+			SectionName = FName("Rifle");
+			break;
+
+		case EWeaponType::EWT_SniperRifle:
 			SectionName = FName("Rifle");
 			break;
 		}

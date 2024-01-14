@@ -9,7 +9,6 @@
 #include "Myproject/BlasterTypes/CombatState.h"
 #include "CombatComponent.generated.h"
 
-#define TRACE_LENGTH 80000.f
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYPROJECT_API UCombatComponent : public UActorComponent
@@ -165,6 +164,12 @@ private:
 	// ≥ı ºµØ“©¡ø£∫≥Â∑Ê«π
 	UPROPERTY(EditAnywhere)
 	int32 StartingSMGAmmo = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingShotgunAmmo = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingSniperAmmo = 0;
 
 
 	void InitializeCarriedAmmo();
