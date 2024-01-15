@@ -162,6 +162,8 @@ public:
 
 	bool IsEmpty();
 
+	bool IsFull();
+
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
 
 	FORCEINLINE int32 GetAmmo() const { return Ammo; }

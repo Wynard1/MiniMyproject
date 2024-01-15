@@ -14,7 +14,7 @@
 #include "Camera/CameraComponent.h"
 #include "TimerManager.h"
 #include "Sound/SoundCue.h"
-
+#include "Myproject/Character/BlasterAnimInstance.h"
 
 
 // Sets default values for this component's properties
@@ -37,6 +37,16 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 
 	DOREPLIFETIME(UCombatComponent, CombatState);
+}
+
+void UCombatComponent::ShotgunShellReload()
+{
+	if (Character && Character->HasAuthority())
+	{
+		// 调用更新霰弹枪弹药值的函数
+		UpdateShotgunAmmoValues();
+	}
+
 }
 
 void UCombatComponent::BeginPlay()
@@ -154,6 +164,22 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 {
 
 	if (EquippedWeapon == nullptr) return;
+	
+	/*
+	散弹枪特例、可以在换弹时射击
+	*/
+	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		// 根据bAiming播放开火蒙太奇
+		Character->PlayFireMontage(bAiming);
+
+		// 执行开火功能
+		EquippedWeapon->Fire(TraceHitTarget);
+
+		// 射击完成后设置战斗状态为未占用
+		CombatState = ECombatState::ECS_Unoccupied;
+		return;
+	}
 
 	//如果在瞄准，就播放FireMontage
 	if (Character && CombatState == ECombatState::ECS_Unoccupied)
@@ -285,6 +311,54 @@ void UCombatComponent::UpdateAmmoValues()
 
 	//增加当前使用弹夹的弹药
 	EquippedWeapon->AddAmmo(-ReloadAmount);
+}
+
+void UCombatComponent::UpdateShotgunAmmoValues()
+{
+	if (Character == nullptr || EquippedWeapon == nullptr)
+	{
+		return;
+	}
+
+	// 弹药值更新
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		// 从携带的弹药映射中减去一发子弹
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= 1;
+		
+		// 更新携带弹药的值
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+
+	// HUD更新
+	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		// 更新HUD中显示的携带弹药数量
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+
+	// 弹药值更新
+	EquippedWeapon->AddAmmo(-1);
+
+	// 设置可以射击的标志为真
+	bCanFire = true;
+
+	// 如果武器已满或者携带的弹药为零，则跳转到霰弹枪结束动画(服务器Only)
+	if (EquippedWeapon->IsFull() || CarriedAmmo == 0)
+	{
+		JumpToShotgunEnd();
+	}
+}
+
+void UCombatComponent::JumpToShotgunEnd()
+{
+	// Jump to ShotgunEnd section
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
+	if (AnimInstance && Character->GetReloadMontage())
+	{
+		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
+	}
 }
 
 
@@ -583,6 +657,9 @@ bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
 
+	//霰弹枪特例
+	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
+
 	//持有武器 且 达到开火最快间隔时间 且 状态是无占用(不在换弹期间)
 	//(只要有弹药，可以通过重新上膛来打断武器射击。)
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
@@ -594,6 +671,17 @@ void UCombatComponent::OnRep_CarriedAmmo()
 	if (Controller)
 	{
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+
+	//霰弹枪专用、没备弹了提前结束动作
+	bool bJumpToShotgunEnd =
+		CombatState == ECombatState::ECS_Reloading &&
+		EquippedWeapon != nullptr &&
+		EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun &&
+		CarriedAmmo == 0;	
+	if (bJumpToShotgunEnd)
+	{
+		JumpToShotgunEnd();
 	}
 }
 
