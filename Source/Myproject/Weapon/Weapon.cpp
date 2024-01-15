@@ -28,6 +28,11 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	//启用轮廓
+	EnableCustomDepth(true);
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+	WeaponMesh->MarkRenderStateDirty();
+
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
 	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
@@ -35,6 +40,14 @@ AWeapon::AWeapon()
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
+}
+
+void AWeapon::EnableCustomDepth(bool bEnable)
+{
+	if (WeaponMesh)
+	{
+		WeaponMesh->SetRenderCustomDepth(bEnable);
+	}
 }
 
 void AWeapon::BeginPlay()
@@ -161,6 +174,9 @@ void AWeapon::SetWeaponState(EWeaponState State)
 			WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		}
 
+		//关闭轮廓
+		EnableCustomDepth(false);
+
 		break;
 	
 	case EWeaponState::EWS_Dropped:
@@ -187,6 +203,11 @@ void AWeapon::SetWeaponState(EWeaponState State)
 
 		// 将武器对于Camera通道的碰撞响应设置为忽略（Ignore），避免与相机产生碰撞
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+		//启用轮廓
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		EnableCustomDepth(true);
 
 		break;
 	}
@@ -218,6 +239,9 @@ void AWeapon::OnRep_WeaponState()
 			WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		}
 
+		//关闭轮廓
+		EnableCustomDepth(false);
+
 		break;
 
 	//现在如果我们掉落武器，我们需要模拟物理并为武器设置碰撞
@@ -240,6 +264,11 @@ void AWeapon::OnRep_WeaponState()
 
 		// 将武器对于Camera通道的碰撞响应设置为忽略（Ignore），避免与相机产生碰撞
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+		//启用轮廓
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		EnableCustomDepth(true);
 
 		break;
 	}
