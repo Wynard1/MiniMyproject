@@ -76,8 +76,28 @@ protected:
 
 	void ThrowGrenade();
 
+	// 在服务器端触发投掷手榴弹的函数
 	UFUNCTION(Server, Reliable)
 	void ServerThrowGrenade();
+
+	// 丢下当前装备的武器
+	void DropEquippedWeapon();
+
+	// 将Actor附加到右手
+	void AttachActorToRightHand(AActor* ActorToAttach);
+
+	// 将Actor附加到左手
+	void AttachActorToLeftHand(AActor* ActorToAttach);
+
+	// 更新携带的弹药数量
+	void UpdateCarriedAmmo();
+
+	// 播放装备武器的音效
+	void PlayEquipWeaponSound();
+
+	// 重新装填空的武器
+	void ReloadEmptyWeapon();
+
 
 private:
 	UPROPERTY()
