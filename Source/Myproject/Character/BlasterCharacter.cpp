@@ -291,6 +291,9 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ABlasterCharacter::FireButtonReleased);
 
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ABlasterCharacter::ReloadButtonPressed);
+	
+	//丢手雷
+	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ABlasterCharacter::GrenadeButtonPressed);
 }
 
 void ABlasterCharacter::PostInitializeComponents()
@@ -381,6 +384,15 @@ void ABlasterCharacter::PlayElimMontage()
 	}
 }
 
+void ABlasterCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ThrowGrenadeMontage)
+	{
+		AnimInstance->Montage_Play(ThrowGrenadeMontage);
+	}
+}
+
 void ABlasterCharacter::PlayHitReactMontage()
 {
 	//没有武器不能播放
@@ -396,6 +408,15 @@ void ABlasterCharacter::PlayHitReactMontage()
 
 		//根据名字播放动画段落
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+
+void ABlasterCharacter::GrenadeButtonPressed()
+{
+	if (Combat1)
+	{
+		Combat1->ThrowGrenade();
 	}
 }
 

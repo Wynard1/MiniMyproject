@@ -196,6 +196,8 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+
 	//已经持有武器的话，再装备武器就会丢弃原有的武器，之后装备捡起的武器
 	if (EquippedWeapon)
 	{
@@ -257,7 +259,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::Reload()
 {
-	if (CarriedAmmo > 0 && CombatState != ECombatState::ECS_Reloading)
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		ServerReload();
 	}
@@ -361,6 +363,11 @@ void UCombatComponent::JumpToShotgunEnd()
 	}
 }
 
+//丢雷动画结束，调用此函数改变ECombatState
+void UCombatComponent::ThrowGrenadeFinished()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+}
 
 void UCombatComponent::OnRep_CombatState()	//客户端换弹处理：只在CombatState改变的时候执行
 {
@@ -374,6 +381,15 @@ void UCombatComponent::OnRep_CombatState()	//客户端换弹处理：只在CombatState改变
 		if (bFireButtonPressed)
 		{
 			Fire();
+		}
+		break;
+	
+	//丢雷
+	case ECombatState::ECS_ThrowingGrenade:
+		//非初始客户端才播放丢雷动画
+		if (Character && !Character->IsLocallyControlled())
+		{
+			Character->PlayThrowGrenadeMontage();
 		}
 		break;
 	}
@@ -399,6 +415,37 @@ int32 UCombatComponent::AmountToReload()
 	return 0;
 }
 
+void UCombatComponent::ThrowGrenade()
+{
+	//禁止未播完动画立刻重复丢手雷
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+	
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+
+	//本地播放丢雷动画
+	if (Character)
+	{
+		Character->PlayThrowGrenadeMontage();
+	}
+
+	//如果本地是客户端，则进入服务端
+	if (Character && !Character->HasAuthority())
+	{
+		ServerThrowGrenade();
+	}
+}
+
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	//改变ECombatState从而调用OnrepNotify，从而让其他客户端播放丢雷动画
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	
+	//服务端自己播放丢雷动画
+	if (Character)
+	{
+		Character->PlayThrowGrenadeMontage();
+	}
+}
 
 void UCombatComponent::OnRep_EquippedWeapon()
 {

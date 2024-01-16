@@ -30,6 +30,9 @@ public:
 	
 	//播放被击杀动画
 	void PlayElimMontage();
+
+	//投掷手榴弹动画
+	void PlayThrowGrenadeMontage();
 	
 	virtual void OnRep_ReplicatedMovement() override;
 
@@ -74,6 +77,8 @@ protected:
 
 	//受击动画播放
 	void PlayHitReactMontage();
+
+	void GrenadeButtonPressed();
 
 	//apply damage的回调函数
 	UFUNCTION()
@@ -136,6 +141,10 @@ private:
 	//死亡动画
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* ElimMontage;
+
+	//丢雷动画
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ThrowGrenadeMontage;
 
 	//镜头太近隐藏角色的函数；TICK执行
 	void HideCameraIfCharacterClose();
