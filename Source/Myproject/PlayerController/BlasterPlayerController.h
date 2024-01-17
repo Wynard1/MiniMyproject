@@ -30,6 +30,8 @@ public:
 
 	void SetHUDAnnouncementCountdown(float CountdownTime);
 
+	void SetHUDGrenades(int32 Grenades);
+
 	//重生时更换Pawn会调用
 	virtual void OnPossess(APawn* InPawn) override;
 
@@ -111,4 +113,6 @@ private:
 	float HUDMaxHealth;
 	float HUDScore;
 	int32 HUDDefeats;
+
+	int32 HUDGrenades;
 };

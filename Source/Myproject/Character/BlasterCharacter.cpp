@@ -441,6 +441,9 @@ void ABlasterCharacter::GrenadeButtonPressed()
 
 void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
+	//防止击杀后还会被多次算分
+	if (bElimmed) return;
+	
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 	UpdateHUDHealth();
 	PlayHitReactMontage();

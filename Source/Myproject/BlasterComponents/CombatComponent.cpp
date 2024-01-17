@@ -38,6 +38,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 
 	DOREPLIFETIME(UCombatComponent, CombatState);
+
+	DOREPLIFETIME(UCombatComponent, Grenades);
 }
 
 void UCombatComponent::ShotgunShellReload()
@@ -391,6 +393,12 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 	}
 }
 
+void UCombatComponent::OnRep_Grenades()
+{
+	//变量改变的时候更新
+	UpdateHUDGrenades();
+}
+
 void UCombatComponent::JumpToShotgunEnd()
 {
 	// Jump to ShotgunEnd section
@@ -510,6 +518,8 @@ int32 UCombatComponent::AmountToReload()
 
 void UCombatComponent::ThrowGrenade()
 {
+	if (Grenades == 0) return;
+	
 	//禁止未播完动画立刻重复丢手雷
 	if (CombatState != ECombatState::ECS_Unoccupied || EquippedWeapon == nullptr) return;
 	
@@ -527,15 +537,25 @@ void UCombatComponent::ThrowGrenade()
 		ShowAttachedGrenade(true);
 	}
 
-	//如果本地是客户端，则进入服务端
+	//只有本地是客户端，才会进入服务端RPC
 	if (Character && !Character->HasAuthority())
 	{
 		ServerThrowGrenade();
 	}
+
+	//服务器上丢雷，直接减
+	if (Character && Character->HasAuthority())
+	{
+		Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
+		UpdateHUDGrenades();
+	}
 }
 
+//服务端不执行这个函数
 void UCombatComponent::ServerThrowGrenade_Implementation()
 {
+	if (Grenades == 0) return;
+	
 	//改变ECombatState从而调用OnrepNotify，从而让其他客户端播放丢雷动画
 	CombatState = ECombatState::ECS_ThrowingGrenade;
 	
@@ -549,6 +569,20 @@ void UCombatComponent::ServerThrowGrenade_Implementation()
 		AttachActorToLeftHand(EquippedWeapon);
 
 		ShowAttachedGrenade(true);
+	}
+
+	//只有客户端发送请求，才会在服务端上为客户端执行
+	Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
+	UpdateHUDGrenades();
+}
+
+void UCombatComponent::UpdateHUDGrenades()
+{
+	//更新HUD上的手雷数量
+	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDGrenades(Grenades);
 	}
 }
 

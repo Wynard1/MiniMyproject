@@ -259,6 +259,26 @@ void ABlasterPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 	}
 }
 
+void ABlasterPlayerController::SetHUDGrenades(int32 Grenades)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->GrenadesText;
+
+	if (bHUDValid)
+	{
+		FString GrenadesText = FString::Printf(TEXT("%d"), Grenades);
+		BlasterHUD->CharacterOverlay->GrenadesText->SetText(FText::FromString(GrenadesText));
+	}
+
+	//如果HUD还没有到初始化的顺序，先把变量储存起来，后面用Getter获取
+	else
+	{
+		HUDGrenades = Grenades;
+	}
+}
+
 void ABlasterPlayerController::SetHUDTime()
 {
 	//获取关卡创建时间
@@ -305,18 +325,27 @@ void ABlasterPlayerController::SetHUDTime()
 	CountdownInt = SecondsLeft;
 }
 
+//每帧调用、更新HUD数据
 void ABlasterPlayerController::PollInit()
 {
 	if (CharacterOverlay == nullptr)
 	{
 		if (BlasterHUD && BlasterHUD->CharacterOverlay)
 		{
+			//生命、分数、死亡更新
 			CharacterOverlay = BlasterHUD->CharacterOverlay;
 			if (CharacterOverlay)
 			{
 				SetHUDHealth(HUDHealth, HUDMaxHealth);
 				SetHUDScore(HUDScore);
 				SetHUDDefeats(HUDDefeats);
+			}
+
+			//手雷数量更新
+			ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(GetPawn());
+			if (BlasterCharacter && BlasterCharacter->GetCombat())
+			{
+				SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
 			}
 		}
 	}

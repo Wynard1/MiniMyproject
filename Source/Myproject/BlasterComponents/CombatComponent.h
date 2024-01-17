@@ -85,7 +85,7 @@ protected:
 
 	// 在服务器端触发投掷手榴弹的函数
 	UFUNCTION(Server, Reliable)
-	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+	void ServerThrowGrenade();
 
 	//允许在编辑器中选择一个 AProjectile 或其派生类，并将其赋值给 GrenadeClass 
 	UPROPERTY(EditAnywhere)
@@ -233,11 +233,23 @@ private:
 
 	void UpdateShotgunAmmoValues();
 
+	//手雷初始量
+	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
+	int32 Grenades = 4;
+
+	UFUNCTION()
+	void OnRep_Grenades();
+
+	//手雷最大量
+	UPROPERTY(EditAnywhere)
+	int32 MaxGrenades = 4;
+
+	void UpdateHUDGrenades();
+
 	UPROPERTY(EditAnywhere)
 	double GrenadeThrowSpawnAdjustment = 1;
 
 
 public:	
-	 
-		
+	FORCEINLINE int32 GetGrenades() const { return Grenades; }
 };
