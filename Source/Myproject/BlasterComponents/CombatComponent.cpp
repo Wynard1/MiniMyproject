@@ -15,6 +15,7 @@
 #include "TimerManager.h"
 #include "Sound/SoundCue.h"
 #include "Myproject/Character/BlasterAnimInstance.h"
+#include "Myproject/Weapon/Projectile.h"
 
 
 // Sets default values for this component's properties
@@ -296,7 +297,7 @@ void UCombatComponent::ReloadEmptyWeapon()
 
 void UCombatComponent::Reload()
 {
-	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied)
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull())
 	{
 		ServerReload();
 	}
@@ -409,6 +410,51 @@ void UCombatComponent::ThrowGrenadeFinished()
 	AttachActorToRightHand(EquippedWeapon);
 }
 
+void UCombatComponent::LaunchGrenade()
+{
+    // 隐藏手上的手榴弹模型
+    ShowAttachedGrenade(false);
+
+	if (Character && Character->IsLocallyControlled())
+	{
+		ServerLaunchGrenade(HitTarget);
+	}
+}
+
+void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
+{
+	if (Character && GrenadeClass && Character->GetAttachedGrenade())
+    {
+        // 获取手上榴弹的位置作为生成榴弹的起始位置
+        const FVector StartingLocation = Character->GetAttachedGrenade()->GetComponentLocation();
+        
+        // 计算榴弹飞向目标的向量
+		FVector ToTarget = Target - StartingLocation;
+
+		// Shift the grenade spawn so it does not collide with owner collision
+		FVector ToTargetNormalized = (Target - StartingLocation).GetSafeNormal();
+		FVector ShiftedStartingLocation = StartingLocation + (ToTargetNormalized * GrenadeThrowSpawnAdjustment);
+
+        // 准备生成榴弹的参数
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.Owner = Character;
+        SpawnParams.Instigator = Character;
+        UWorld* World = GetWorld();
+        
+		if (World)
+        {
+            // 生成榴弹
+            World->SpawnActor<AProjectile>(
+                GrenadeClass,           // 榴弹类
+                StartingLocation,       // 起始位置
+                ToTarget.Rotation(),    // 飞向目标的旋转
+                SpawnParams             // 生成参数
+            );
+        }
+    }
+}
+
+
 void UCombatComponent::OnRep_CombatState()	//客户端换弹处理：只在CombatState改变的时候执行
 {
 	switch (CombatState)
@@ -434,6 +480,9 @@ void UCombatComponent::OnRep_CombatState()	//客户端换弹处理：只在CombatState改变
 
 			//插槽改到左手
 			AttachActorToLeftHand(EquippedWeapon);
+
+			//雷模型显示
+			ShowAttachedGrenade(true);
 		}
 		break;
 	}
@@ -462,7 +511,7 @@ int32 UCombatComponent::AmountToReload()
 void UCombatComponent::ThrowGrenade()
 {
 	//禁止未播完动画立刻重复丢手雷
-	if (CombatState != ECombatState::ECS_Unoccupied) return;
+	if (CombatState != ECombatState::ECS_Unoccupied || EquippedWeapon == nullptr) return;
 	
 	CombatState = ECombatState::ECS_ThrowingGrenade;
 
@@ -474,6 +523,8 @@ void UCombatComponent::ThrowGrenade()
 
 		//插槽改到左手
 		AttachActorToLeftHand(EquippedWeapon);
+
+		ShowAttachedGrenade(true);
 	}
 
 	//如果本地是客户端，则进入服务端
@@ -496,6 +547,17 @@ void UCombatComponent::ServerThrowGrenade_Implementation()
 
 		//插槽改到左手
 		AttachActorToLeftHand(EquippedWeapon);
+
+		ShowAttachedGrenade(true);
+	}
+}
+
+//根据Bool决定是否显示Grenade
+void UCombatComponent::ShowAttachedGrenade(bool bShowGrenade)
+{
+	if (Character && Character->GetAttachedGrenade())
+	{
+		Character->GetAttachedGrenade()->SetVisibility(bShowGrenade);
 	}
 }
 

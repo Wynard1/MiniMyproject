@@ -130,6 +130,8 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 	}
 	if (ElimmedController)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ElimmedController valid"))
+
 		/*
 		*set random player start
 		*/

@@ -65,6 +65,19 @@ ABlasterCharacter::ABlasterCharacter()//构造函数
 
 	//TimelineComponent
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
+	/*
+	Grenade
+	*/
+	// 创建并初始化静态网格组件，用于表示手上的手榴弹
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Attached Grenade"));
+
+	// 将手榴弹静态网格组件附加到角色的骨架上的指定Socket（GrenadeSocket）
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+
+	// 设置手榴弹静态网格组件的碰撞模式为无碰撞，因为手榴弹不需要与其他物体进行碰撞交互
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 }
 
 void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -227,6 +240,12 @@ void ABlasterCharacter::BeginPlay()
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABlasterCharacter::ReceiveDamage);
+	}
+
+	//最开始手雷隐藏
+	if (AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
 	}
 }
 

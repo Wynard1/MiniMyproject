@@ -41,6 +41,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ThrowGrenadeFinished();
+
+	//丢出手雷的时候隐藏模型
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -78,7 +85,11 @@ protected:
 
 	// 在服务器端触发投掷手榴弹的函数
 	UFUNCTION(Server, Reliable)
-	void ServerThrowGrenade();
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+
+	//允许在编辑器中选择一个 AProjectile 或其派生类，并将其赋值给 GrenadeClass 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> GrenadeClass;
 
 	// 丢下当前装备的武器
 	void DropEquippedWeapon();
@@ -98,6 +109,7 @@ protected:
 	// 重新装填空的武器
 	void ReloadEmptyWeapon();
 
+	void ShowAttachedGrenade(bool bShowGrenade);
 
 private:
 	UPROPERTY()
@@ -220,6 +232,11 @@ private:
 	void UpdateAmmoValues();
 
 	void UpdateShotgunAmmoValues();
+
+	UPROPERTY(EditAnywhere)
+	double GrenadeThrowSpawnAdjustment = 1;
+
+
 public:	
 	 
 		
