@@ -52,6 +52,25 @@ void UCombatComponent::ShotgunShellReload()
 
 }
 
+void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	// 检查CarriedAmmoMap是否包含捡起的WeaponType
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		//更新CarriedAmmoMap中指定WeaponType的弹药数量，使用FMath::Clamp确保不超过最大弹药量
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo);
+		
+		//调用更新弹药HUD的函数
+		UpdateCarriedAmmo();
+	}
+
+	//空弹匣，判断是否能自动Reload
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
+	}
+}
+
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();

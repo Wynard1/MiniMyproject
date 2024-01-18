@@ -48,6 +48,8 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -195,6 +197,9 @@ private:
 	/*
 	初始化CarriedAmmo
 	*/
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 500;
 
 	// 初始弹药量：突击步枪
 	UPROPERTY(EditAnywhere)
