@@ -789,16 +789,22 @@ void ABlasterCharacter::HideCameraIfCharacterClose()
 	}
 }
 
-void ABlasterCharacter::OnRep_Health() //血量改变时
+//血量改变时
+void ABlasterCharacter::OnRep_Health(float LastHealth) 
 {
-	UpdateHUDHealth();//更新血量
+	UpdateHUDHealth();	//更新血量
 	if (!bElimmed)
 	{
-		PlayHitReactMontage();
+		//如果血少了才会播放受击动画
+		if (Health < LastHealth)
+		{
+			PlayHitReactMontage();
+		}
 	}
 }
 
-void ABlasterCharacter::UpdateHUDHealth()//更新血量
+//更新血量
+void ABlasterCharacter::UpdateHUDHealth()
 {
 	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
 	if (BlasterPlayerController)

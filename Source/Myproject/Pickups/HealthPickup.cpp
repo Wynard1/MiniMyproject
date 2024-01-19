@@ -24,9 +24,15 @@ void AHealthPickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AA
     Super::OnSphereOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
     ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(OtherActor);
+    
+    //应用治疗效果
     if (BlasterCharacter)
     {
-        
+        UBuffComponent* Buff = BlasterCharacter->GetBuff();
+        if (Buff)
+        {
+            Buff->Heal(HealAmount, HealingTime);
+        }
     }
 
     // 销毁

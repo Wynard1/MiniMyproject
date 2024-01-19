@@ -50,6 +50,8 @@ public:
 	//用于显示瞄准镜的函数
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
+
+	void UpdateHUDHealth();
 protected:
 	virtual void BeginPlay() override;
 
@@ -83,8 +85,6 @@ protected:
 	//apply damage的回调函数
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
-
-	void UpdateHUDHealth();
 
 	// Poll for any relelvant classes and initialize our HUD
 	void PollInit();
@@ -178,7 +178,7 @@ private:
 	float Health = 100.f;
 
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float LastHealth);
 
 	UPROPERTY()
 	class ABlasterPlayerController* BlasterPlayerController;
@@ -271,6 +271,8 @@ public:
 
 	//获取血量的getter
 	FORCEINLINE float GetHealth() const { return Health; }
+
+	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 
 	ECombatState GetCombatState() const;
@@ -282,4 +284,6 @@ public:
 
 	// 获取已附着的手雷的静态网格组件
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
+
+	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 };
