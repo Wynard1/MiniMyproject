@@ -19,7 +19,12 @@ public:
 	void Heal(float HealAmount, float HealingTime);
 
 	void BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime);
+
+	void BuffJump(float BuffJumpVelocity, float BuffTime);
+
 	void SetInitialSpeeds(float BaseSpeed, float CrouchSpeed);
+
+	void SetInitialJumpVelocity(float Velocity);
 protected:
 	virtual void BeginPlay() override;
 
@@ -60,6 +65,16 @@ private:
 	// 通过多播RPC应用速度增益到所有客户端的函数
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSpeedBuff(float BaseSpeed, float CrouchSpeed);
+
+	/**
+	* Jump buff
+	*/
+	FTimerHandle JumpBuffTimer;
+	void ResetJump();
+	float InitialJumpVelocity;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastJumpBuff(float JumpVelocity);
 
 public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

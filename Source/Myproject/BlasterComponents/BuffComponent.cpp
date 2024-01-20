@@ -69,6 +69,12 @@ void UBuffComponent::SetInitialSpeeds(float BaseSpeed, float CrouchSpeed)
     InitialCrouchSpeed = CrouchSpeed;
 }
 
+// 获取角色初始跳跃速度并存储
+void UBuffComponent::SetInitialJumpVelocity(float Velocity)
+{
+    InitialJumpVelocity = Velocity;
+}
+
 // 提供速度增益
 void UBuffComponent::BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime)
 {
@@ -110,9 +116,57 @@ void UBuffComponent::ResetSpeeds()
 void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float CrouchSpeed)
 {
     // 设置所有客户端的角色速度信息
-    Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed;
-    Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
+    if (Character && Character->GetCharacterMovement())
+    {
+        Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed;
+        Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
+    }
+
 }
+
+void UBuffComponent::BuffJump(float BuffJumpVelocity, float BuffTime)
+{
+    if (Character == nullptr) return;
+
+    // 设置定时器，用于在Buff时间结束后调用ResetJump函数
+    Character->GetWorldTimerManager().SetTimer(
+        JumpBuffTimer,
+        this,
+        &UBuffComponent::ResetJump,
+        BuffTime
+    );
+
+    // 如果存在角色移动组件，设置跳跃Z轴速度
+    if (Character->GetCharacterMovement())
+    {
+        Character->GetCharacterMovement()->JumpZVelocity = BuffJumpVelocity;
+    }
+
+    // 调用MulticastJumpBuff，在所有客户端同步设置跳跃Z轴速度
+    MulticastJumpBuff(BuffJumpVelocity);
+}
+
+void UBuffComponent::MulticastJumpBuff_Implementation(float JumpVelocity)
+{
+    // 同步设置跳跃Z轴速度
+    if (Character && Character->GetCharacterMovement())
+    {
+        Character->GetCharacterMovement()->JumpZVelocity = JumpVelocity;
+    }
+}
+
+void UBuffComponent::ResetJump()
+{
+    //重置跳跃Z轴速度为初始值
+    if (Character->GetCharacterMovement())
+    {
+        Character->GetCharacterMovement()->JumpZVelocity = InitialJumpVelocity;
+    }
+
+    // 调用MulticastJumpBuff，在所有客户端同步重置跳跃Z轴速度为初始值
+    MulticastJumpBuff(InitialJumpVelocity);
+}
+
 
 // Called every frame
 void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
