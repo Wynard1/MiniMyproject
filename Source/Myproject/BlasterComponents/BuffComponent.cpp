@@ -3,6 +3,7 @@
 
 #include "BuffComponent.h"
 #include "Myproject/Character/BlasterCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values for this component's properties
 UBuffComponent::UBuffComponent()
@@ -61,6 +62,57 @@ void UBuffComponent::BeginPlay()
 	
 }
 
+// 获取角色初始速度并存储
+void UBuffComponent::SetInitialSpeeds(float BaseSpeed, float CrouchSpeed)
+{
+    InitialBaseSpeed = BaseSpeed;
+    InitialCrouchSpeed = CrouchSpeed;
+}
+
+// 提供速度增益
+void UBuffComponent::BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime)
+{
+    if (Character == nullptr) return;
+
+    // 设置一个计时器，用于在一定时间后重置速度
+    Character->GetWorldTimerManager().SetTimer(
+        SpeedBuffTimer, //指定计时器句柄为SpeedBuffTimer
+        this,   //回调函数所在类
+        &UBuffComponent::ResetSpeeds,   //上述类里的回调函数
+        BuffTime    // 计时器的时长
+    );
+
+    // 设置角色的最大行走速度和蹲伏速度
+    if (Character->GetCharacterMovement())
+    {
+        Character->GetCharacterMovement()->MaxWalkSpeed = BuffBaseSpeed;
+        Character->GetCharacterMovement()->MaxWalkSpeedCrouched = BuffCrouchSpeed;
+    }
+
+    // 调用多播函数，在所有客户端上同步速度增益
+    MulticastSpeedBuff(BuffBaseSpeed, BuffCrouchSpeed);
+}
+
+// 重置速度到初始值
+void UBuffComponent::ResetSpeeds()
+{
+    if (Character == nullptr || Character->GetCharacterMovement() == nullptr) return;
+
+    // 将速度重置为初始值
+    Character->GetCharacterMovement()->MaxWalkSpeed = InitialBaseSpeed;
+    Character->GetCharacterMovement()->MaxWalkSpeedCrouched = InitialCrouchSpeed;
+
+    // 调用多播函数，在所有客户端上同步速度重置
+    MulticastSpeedBuff(InitialBaseSpeed, InitialCrouchSpeed);
+}
+
+// 多播函数，用于在所有客户端上同步速度信息
+void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float CrouchSpeed)
+{
+    // 设置所有客户端的角色速度信息
+    Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed;
+    Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
+}
 
 // Called every frame
 void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

@@ -50,6 +50,14 @@ private:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* PickupMesh;
 
+	// 拾取物品展示用的粒子效果
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effects", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraComponent* PickupEffectComponent;
+
+	// 拾取时触发的特效
+	UPROPERTY(EditAnywhere, Category = "Effects")
+	class UNiagaraSystem* PickupEffect;
+
 public:
 
 };

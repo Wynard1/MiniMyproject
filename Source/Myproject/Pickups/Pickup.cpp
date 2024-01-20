@@ -3,6 +3,8 @@
 #include "Sound/SoundCue.h"
 #include "Components/SphereComponent.h"
 #include "Myproject/Weapon/WeaponTypes.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 // 构造函数
 APickup::APickup()
@@ -31,6 +33,10 @@ APickup::APickup()
 	PickupMesh->SetRelativeScale3D(FVector(5.f, 5.f, 5.f));	//初始化大小
 	PickupMesh->SetRenderCustomDepth(true);	//初始化描边
 	PickupMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_PURPLE);	//初始化描边为紫色
+
+	// 创建 Niagara 组件并设置其附着到根组件
+	PickupEffectComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("PickupEffectComponent"));
+	PickupEffectComponent->SetupAttachment(RootComponent);
 }
 
 void APickup::BeginPlay()
@@ -81,6 +87,18 @@ void APickup::Destroyed()
 			this,
 			PickupSound,
 			GetActorLocation()
+		);
+	}
+
+	//如果有PickupEffect，播放
+	if (PickupEffect)
+	{
+		// 在实例被销毁时，在位置生成 Niagara 系统
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this,
+			PickupEffect,
+			GetActorLocation(),
+			GetActorRotation()
 		);
 	}
 }

@@ -319,6 +319,7 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ABlasterCharacter::GrenadeButtonPressed);
 }
 
+//在Actor的组件初始化完成后被调用，允许在组件初始化后执行一些额外的操作
 void ABlasterCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -330,6 +331,12 @@ void ABlasterCharacter::PostInitializeComponents()
 	if (Buff)
 	{
 		Buff->Character = this;
+		
+		//存储角色初始速度
+		Buff->SetInitialSpeeds(
+			GetCharacterMovement()->MaxWalkSpeed,
+			GetCharacterMovement()->MaxWalkSpeedCrouched
+		);
 	}
 }
 
