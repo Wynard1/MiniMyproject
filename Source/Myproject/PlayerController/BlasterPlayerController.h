@@ -17,6 +17,7 @@ class MYPROJECT_API ABlasterPlayerController : public APlayerController
 public:
 	//更新生命值
 	void SetHUDHealth(float Health, float MaxHealth);
+	void SetHUDShield(float Shield, float MaxShield);
 
 	//设置Score和Defeat
 	void SetHUDScore(float Score);				//这个函数是继承的playerstate自带的，参数是float
@@ -110,9 +111,19 @@ private:
 	bool bInitializeCharacterOverlay = false;
 
 	float HUDHealth;
+	bool bInitializeHealth = false;
 	float HUDMaxHealth;
+
 	float HUDScore;
+	bool bInitializeScore = false;
+	
 	int32 HUDDefeats;
+	bool bInitializeDefeats = false;
 
 	int32 HUDGrenades;
+	bool bInitializeGrenades = false;
+
+	float HUDShield;
+	bool bInitializeShield = false;
+	float HUDMaxShield;
 };

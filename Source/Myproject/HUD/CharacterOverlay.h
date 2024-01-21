@@ -14,12 +14,23 @@ class MYPROJECT_API UCharacterOverlay : public UUserWidget
 {
 	GENERATED_BODY()
 public:
-	//绑定WBP控件
+	/*
+	绑定血量
+	*/
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* HealthBar;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* HealthText;
+
+	/*
+	绑定护盾
+	*/
+	UPROPERTY(meta = (BindWidget))
+	UProgressBar* ShieldBar;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ShieldText;
 
 	/*
 	score

@@ -113,6 +113,7 @@ void ABlasterPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		BlasterHUD->CharacterOverlay->HealthBar &&
 		BlasterHUD->CharacterOverlay->HealthText;
 
+	//如果引擎已经初始化HUD了，直接可以设置
 	if (bHUDValid)
 	{
 		//SetPercent的使用——血条百分比
@@ -123,14 +124,48 @@ void ABlasterPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 
 		//FString HealthText和CharacterOverlay->HealthText里的UTextBlock* HealthText，都是HealthText但是含义不同。
-		BlasterHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));//SetText需要传入FText，所以要从FString转换成FText
+		BlasterHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));	//SetText需要传入FText，所以要从FString转换成FText
 	}
 
+	//引擎还没有初始化HUD的时候，先把变量存储起来，等到PollInit再重新调用上面的
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		//决定后续是否要初始化的Bool
+		bInitializeHealth = true;
 		HUDHealth = Health;
 		HUDMaxHealth = MaxHealth;
+	}
+}
+
+void ABlasterPlayerController::SetHUDShield(float Shield, float MaxShield)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->ShieldBar &&
+		BlasterHUD->CharacterOverlay->ShieldText;
+	
+	//如果引擎已经初始化HUD了，直接可以设置
+	if (bHUDValid)
+	{
+		//SetPercent的使用——护盾百分比
+		const float ShieldPercent = Shield / MaxShield;
+		BlasterHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
+
+		//护盾文字打印，FMath::CeilToInt——向上取整
+		FString ShieldText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Shield), FMath::CeilToInt(MaxShield));
+
+		//FString HealthText和CharacterOverlay->HealthText里的UTextBlock* HealthText，都是HealthText但是含义不同。
+		BlasterHUD->CharacterOverlay->ShieldText->SetText(FText::FromString(ShieldText));	//SetText需要传入FText，所以要从FString转换成FText
+	}
+
+	//引擎还没有初始化HUD的时候，先把变量存储起来，等到PollInit再重新调用上面的
+	else
+	{
+		//决定后续是否要初始化的Bool
+		bInitializeShield = true;
+		HUDShield = Shield;
+		HUDMaxShield = MaxShield;
 	}
 }
 
@@ -144,6 +179,7 @@ void ABlasterPlayerController::SetHUDScore(float Score)
 		BlasterHUD->CharacterOverlay &&
 		BlasterHUD->CharacterOverlay->ScoreAmount;
 	
+	//如果引擎已经初始化HUD了，直接可以设置
 	if (bHUDValid)
 	{
 		//向下取整
@@ -151,9 +187,11 @@ void ABlasterPlayerController::SetHUDScore(float Score)
 		BlasterHUD->CharacterOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
 	}
 
+	//引擎还没有初始化HUD的时候，先把变量存储起来，等到PollInit再重新调用上面的
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		//决定后续是否要初始化的Bool
+		bInitializeScore = true;
 		HUDScore = Score;
 	}
 }
@@ -168,15 +206,19 @@ void ABlasterPlayerController::SetHUDDefeats(int32 Defeats)
 		BlasterHUD->CharacterOverlay &&
 		BlasterHUD->CharacterOverlay->DefeatsAmount;
 
+	//如果引擎已经初始化HUD了，直接可以设置
 	if (bHUDValid)
 	{
 		//
 		FString DefeatsText = FString::Printf(TEXT("%d"), Defeats);
 		BlasterHUD->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
 	}
+	
+	//引擎还没有初始化HUD的时候，先把变量存储起来，等到PollInit再重新调用上面的
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		//决定后续是否要初始化的Bool
+		bInitializeScore = true;
 		HUDDefeats = Defeats;
 	}
 }
@@ -275,6 +317,7 @@ void ABlasterPlayerController::SetHUDGrenades(int32 Grenades)
 	//如果HUD还没有到初始化的顺序，先把变量储存起来，后面用Getter获取
 	else
 	{
+		bInitializeGrenades = true;
 		HUDGrenades = Grenades;
 	}
 }
@@ -332,20 +375,23 @@ void ABlasterPlayerController::PollInit()
 	{
 		if (BlasterHUD && BlasterHUD->CharacterOverlay)
 		{
-			//生命、分数、死亡更新
+			//生命、护盾、分数、死亡更新
 			CharacterOverlay = BlasterHUD->CharacterOverlay;
 			if (CharacterOverlay)
 			{
-				SetHUDHealth(HUDHealth, HUDMaxHealth);
-				SetHUDScore(HUDScore);
-				SetHUDDefeats(HUDDefeats);
+				//先判断是否有提前存储，有的话才设置
+				if (bInitializeHealth) SetHUDHealth(HUDHealth, HUDMaxHealth);
+				if (bInitializeShield) SetHUDShield(HUDShield, HUDMaxShield);
+				if (bInitializeScore) SetHUDScore(HUDScore);
+				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats);
 			}
 
 			//手雷数量更新
 			ABlasterCharacter* BlasterCharacter = Cast<ABlasterCharacter>(GetPawn());
 			if (BlasterCharacter && BlasterCharacter->GetCombat())
 			{
-				SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
+				//先判断是否有提前存储，有的话才设置
+				if (bInitializeGrenades) SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
 			}
 		}
 	}

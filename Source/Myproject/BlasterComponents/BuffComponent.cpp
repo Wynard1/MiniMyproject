@@ -28,6 +28,18 @@ void UBuffComponent::Heal(float HealAmount, float HealingTime)
     AmountToHeal += HealAmount;
 }
 
+void UBuffComponent::ReplenishShield(float ShieldAmount, float ReplenishTime)
+{
+    // 设置正在进行回盾的标志为true
+    bReplenishingShield = true;
+
+    // 计算回盾速率，即每秒回盾的量
+    ShieldReplenishRate = ShieldAmount / ReplenishTime;
+
+    // 累加需要回盾的总量
+    ShieldReplenishAmount += ShieldAmount;
+}
+
 // 在HealRampUp函数中，处理每帧的治疗逻辑
 void UBuffComponent::HealRampUp(float DeltaTime)
 {
@@ -54,6 +66,30 @@ void UBuffComponent::HealRampUp(float DeltaTime)
     }
 }
 
+void UBuffComponent::ShieldRampUp(float DeltaTime)
+{
+    // 先决条件
+    if (!bReplenishingShield || Character == nullptr || Character->IsElimmed()) return;
+
+    // 计算本帧需要回盾的量
+    const float ReplenishThisFrame = ShieldReplenishRate * DeltaTime;
+    
+    // 使用FMath::Clamp确保在0和最大盾量之间设置Character的盾量
+    Character->SetShield(FMath::Clamp(Character->GetShield() + ReplenishThisFrame, 0.f, Character->GetMaxShield()));
+
+    // 更新HUD中的盾量信息
+    Character->UpdateHUDShield();
+
+    // 减去已经回盾的量
+    ShieldReplenishAmount -= ReplenishThisFrame;
+
+    // 如果已经回盾完成或者Character的盾量达到最大值，停止回盾
+    if (ShieldReplenishAmount <= 0.f || Character->GetShield() >= Character->GetMaxShield())
+    {
+        bReplenishingShield = false;
+        ShieldReplenishAmount = 0.f;
+    }
+}
 
 // Called when the game starts
 void UBuffComponent::BeginPlay()
@@ -175,5 +211,8 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 
     //每帧计算治疗结果
 	HealRampUp(DeltaTime);
+
+    //每帧计算回盾结果
+    ShieldRampUp(DeltaTime);
 }
 

@@ -79,7 +79,7 @@ ABlasterCharacter::ABlasterCharacter()//构造函数
 	// 将手榴弹静态网格组件附加到角色的骨架上的指定Socket（GrenadeSocket）
 	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
 
-	// 设置手榴弹静态网格组件的碰撞模式为无碰撞，因为手榴弹不需要与其他物体进行碰撞交互
+	// 设置手榴弹静态网格组件的碰撞模式为无碰撞，因为手榴弹不需要与其他物体进行碰撞交互void ABlasterCharacter::UpdateHUDHealth()
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 }
@@ -91,7 +91,7 @@ void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	//复制注册
 	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ABlasterCharacter, Health);
-
+	DOREPLIFETIME(ABlasterCharacter, Shield);
 	DOREPLIFETIME(ABlasterCharacter, bDisableGameplay);
 }
 
@@ -239,6 +239,9 @@ void ABlasterCharacter::BeginPlay()
 
 	//血量更新
 	UpdateHUDHealth();
+
+	//盾量更新
+	UpdateHUDShield();
 
 	//绑定伤害回调函数
 	if (HasAuthority())
@@ -463,8 +466,37 @@ void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 	//防止击杀后还会被多次算分
 	if (bElimmed) return;
 	
+	// 定义一个浮点型变量DamageToHealth，用于存储计算后的伤害值，默认等于输入的伤害值Damage
+	float DamageToHealth = Damage;
+
+	// 如果护盾值大于0
+	if (Shield > 0.f)
+	{
+		// 如果护盾值大于等于伤害值Damage
+		if (Shield >= Damage)
+		{
+			// 减去护盾值，并确保新的护盾值在0和MaxShield之间
+			Shield = FMath::Clamp(Shield - Damage, 0.f, MaxShield);
+
+			// 将伤害值传递给生命值，因为护盾完全吸收了伤害
+			DamageToHealth = 0.f;
+		}
+
+		else // 如果护盾值小于伤害值Damage
+		{
+			// 护盾被完全消耗
+			Shield = 0.f;
+
+			// 计算剩余的伤害传递给生命值，确保生命值的变化在0和Damage之间
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0.f, Damage);
+		}
+	}
+
+	//剩余伤害减到血量上
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	
 	UpdateHUDHealth();
+	UpdateHUDShield();
 	PlayHitReactMontage();
 
 	//生命值为0时，执行淘汰函数
@@ -813,6 +845,16 @@ void ABlasterCharacter::OnRep_Health(float LastHealth)
 	}
 }
 
+void ABlasterCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateHUDShield();	//更新盾量
+	if (Shield < LastShield)
+	{
+		//如果盾少了才会播放受击动画
+		PlayHitReactMontage();
+	}
+}
+
 //更新血量
 void ABlasterCharacter::UpdateHUDHealth()
 {
@@ -823,20 +865,13 @@ void ABlasterCharacter::UpdateHUDHealth()
 	}
 }
 
-
-void ABlasterCharacter::StartDissolve()
+//更新盾量
+void ABlasterCharacter::UpdateHUDShield()
 {
-	//把回调函数绑定在Track上
-	DissolveTrack.BindDynamic(this, &ABlasterCharacter::UpdateDissolveMaterial); 
-	
-	//调用TimeLine
-	if (DissolveCurve && DissolveTimeline)
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController)
 	{
-		//为了把曲线加到时间轴上，我们要用溶解的时间轴。
-		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
-		
-		//在这之后剩下的就是开始时间轴
-		DissolveTimeline->Play();
+		BlasterPlayerController->SetHUDShield(Shield, MaxShield);
 	}
 }
 
@@ -864,6 +899,22 @@ void ABlasterCharacter::UpdateDissolveMaterial(float DissolveValue)
 	{
 		//让Timeline和材质的Dissolve绑定
 		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
+	}
+}
+
+void ABlasterCharacter::StartDissolve()
+{
+	//把回调函数绑定在Track上
+	DissolveTrack.BindDynamic(this, &ABlasterCharacter::UpdateDissolveMaterial);
+
+	//调用TimeLine
+	if (DissolveCurve && DissolveTimeline)
+	{
+		//为了把曲线加到时间轴上，我们要用溶解的时间轴。
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+
+		//在这之后剩下的就是开始时间轴
+		DissolveTimeline->Play();
 	}
 }
 
