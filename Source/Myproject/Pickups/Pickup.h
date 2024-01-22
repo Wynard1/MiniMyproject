@@ -58,6 +58,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Effects")
 	class UNiagaraSystem* PickupEffect;
 
+	//FTimerHandle，用于处理绑定Overlap事件的定时器
+	FTimerHandle BindOverlapTimer;
+
+	//延迟时间，在这段时间后再开始绑定Overlap事件
+	float BindOverlapTime = 0.25f;
+
+	//回调函数，当绑定Overlap事件的定时器完成时调用该函数
+	void BindOverlapTimerFinished();
+
+
 public:
 
 };

@@ -46,7 +46,13 @@ void APickup::BeginPlay()
 	// 如果是服务器实例，则绑定Overlap事件
 	if (HasAuthority())
 	{
-		OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlap);
+		//过一段时间后再执行
+		GetWorldTimerManager().SetTimer(
+			BindOverlapTimer,
+			this,
+			&APickup::BindOverlapTimerFinished,
+			BindOverlapTime
+		);
 	}
 }
 
@@ -61,6 +67,12 @@ void APickup::OnSphereOverlap(
 )
 {
 
+}
+
+void APickup::BindOverlapTimerFinished()
+{
+	//绑定动态委托
+	OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlap);
 }
 
 // 每帧更新时调用
