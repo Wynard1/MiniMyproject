@@ -104,8 +104,13 @@ void ABlasterCharacter::OnRep_ReplicatedMovement()
 
 void ABlasterCharacter::Elim()	//only on server
 {
-	//死亡时武器掉落
-	if (Combat1 && Combat1->EquippedWeapon)
+	//死亡时武器掉落,增加了判断自毁的布尔变量
+	if (Combat1->EquippedWeapon->bDestroyWeapon)
+	{
+		Combat1->EquippedWeapon->Destroy();
+	}
+	
+	else
 	{
 		Combat1->EquippedWeapon->Dropped();
 	}
@@ -235,6 +240,10 @@ void ABlasterCharacter::Destroyed()
 
 void ABlasterCharacter::BeginPlay()
 {
+	//初始武器和弹药生成
+	SpawnDefaultWeapon();	
+	UpdateHUDAmmo();
+	
 	Super::BeginPlay();
 
 	//血量更新
@@ -874,6 +883,43 @@ void ABlasterCharacter::UpdateHUDShield()
 		BlasterPlayerController->SetHUDShield(Shield, MaxShield);
 	}
 }
+
+void ABlasterCharacter::UpdateHUDAmmo()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+
+	if (BlasterPlayerController && Combat1 && Combat1->EquippedWeapon)
+	{
+		// 更新HUD的弹药信息
+		BlasterPlayerController->SetHUDCarriedAmmo(Combat1->CarriedAmmo);
+		BlasterPlayerController->SetHUDWeaponAmmo(Combat1->EquippedWeapon->GetAmmo());
+	}
+}
+
+//生成并装备默认武器的函数
+void ABlasterCharacter::SpawnDefaultWeapon()
+{
+	//不在服务器上的话GetGameMode会返回null，Cast得到nullptr
+	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	UWorld* World = GetWorld();
+	
+	//只有服务器上能进行
+	if (BlasterGameMode && World && !bElimmed && DefaultWeaponClass)
+	{
+		// 生成DefaultWeaponClass对应的默认武器
+		AWeapon* StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+
+		// 将默认武器的bDestroyWeapon属性设置为true，以便在玩家被淘汰时销毁武器
+		StartingWeapon->bDestroyWeapon = true;
+
+		//将生成的默认武器装备给玩家
+		if (Combat1)
+		{
+			Combat1->EquipWeapon(StartingWeapon);
+		}
+	}
+}
+
 
 void ABlasterCharacter::PollInit()
 {

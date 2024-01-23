@@ -7,7 +7,7 @@
 // 构造函数，设置主要的Actor属性
 APickupSpawnPoint::APickupSpawnPoint()
 {
-	PrimaryActorTick.bCanEverTick = true;  // 允许每帧调用
+	PrimaryActorTick.bCanEverTick = false;  // TICK函数里没东西，不需要每帧调用
 	bReplicates = true;  // 允许复制
 }
 

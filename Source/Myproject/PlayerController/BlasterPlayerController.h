@@ -110,6 +110,7 @@ private:
 	class UCharacterOverlay* CharacterOverlay;
 	bool bInitializeCharacterOverlay = false;
 
+	//是否需要二次Initialize，初始都是false
 	float HUDHealth;
 	bool bInitializeHealth = false;
 	float HUDMaxHealth;
@@ -126,4 +127,10 @@ private:
 	float HUDShield;
 	bool bInitializeShield = false;
 	float HUDMaxShield;
+
+	float HUDCarriedAmmo;
+	bool bInitializeCarriedAmmo = false;
+
+	float HUDWeaponAmmo;
+	bool bInitializeWeaponAmmo = false;
 };
